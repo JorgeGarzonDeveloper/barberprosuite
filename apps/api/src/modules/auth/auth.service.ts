@@ -4,6 +4,7 @@ import {
   ConflictException,
   BadRequestException,
   NotFoundException,
+  Logger,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
@@ -17,6 +18,8 @@ import { VerifyOtpDto, ResendOtpDto } from "./dto/verify-otp.dto";
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
@@ -61,7 +64,8 @@ export class AuthService {
       await this.prisma.barberProfile.create({ data: { userId: user.id } });
     }
 
-    await this.email.sendOtp(user.email, user.firstName, otpCode);
+    this.email.sendOtp(user.email, user.firstName, otpCode)
+      .catch(err => this.logger.error(`OTP email failed for ${user.email}: ${err.message}`));
 
     return {
       requiresVerification: true,
@@ -125,7 +129,8 @@ export class AuthService {
       data: { otpCode, otpExpiresAt },
     });
 
-    await this.email.sendOtp(user.email, user.firstName, otpCode);
+    this.email.sendOtp(user.email, user.firstName, otpCode)
+      .catch(err => this.logger.error(`Resend OTP failed for ${user.email}: ${err.message}`));
 
     return { message: "Código reenviado a tu correo" };
   }
@@ -152,7 +157,8 @@ export class AuthService {
         where: { id: user.id },
         data: { otpCode, otpExpiresAt },
       });
-      await this.email.sendOtp(user.email, user.firstName, otpCode);
+      this.email.sendOtp(user.email, user.firstName, otpCode)
+        .catch(err => this.logger.error(`Login OTP resend failed for ${user.email}: ${err.message}`));
 
       throw new UnauthorizedException(
         JSON.stringify({ requiresVerification: true, email: user.email })
