@@ -1,0 +1,432 @@
+// ============================================================
+// BarberProSuite - Prisma Schema
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== USERS ====================
+
+model User {
+  id            String     @id @default(uuid())
+  email         String     @unique
+  phone         String     @unique
+  firstName     String
+  lastName      String
+  passwordHash  String
+  role          UserRole   @default(CLIENT)
+  status        UserStatus @default(PENDING_VERIFICATION)
+  avatarUrl     String?
+  fcmToken      String?
+  emailVerified Boolean    @default(false)
+  phoneVerified Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  barberProfile   BarberProfile?
+  clientProfile   ClientProfile?
+  notifications   Notification[]
+  refreshTokens   RefreshToken[]
+  ownedShops      Barbershop[]     @relation("BarbershopOwner")
+  subscriptions   Subscription[]
+  supportTickets  SupportTicket[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  BARBER
+  CLIENT
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+// ==================== PROFILES ====================
+
+model BarberProfile {
+  id           String    @id @default(uuid())
+  userId       String    @unique
+  barbershopId String?
+  specialties  String[]
+  bio          String?
+  rating       Float     @default(0)
+  totalReviews Int       @default(0)
+  isAvailable  Boolean   @default(true)
+  workingHours Json      @default("[]")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  barbershop   Barbershop?  @relation(fields: [barbershopId], references: [id])
+  appointments Appointment[] @relation("BarberAppointments")
+  queueEntries QueueEntry[]  @relation("BarberQueue")
+  services     Service[]     @relation("BarberServices")
+
+  @@map("barber_profiles")
+}
+
+model ClientProfile {
+  id                    String   @id @default(uuid())
+  userId                String   @unique
+  preferredBarbershopId String?
+  loyaltyPoints         Int      @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointments Appointment[]  @relation("ClientAppointments")
+  queueEntries QueueEntry[]   @relation("ClientQueue")
+  reviews      Review[]
+
+  @@map("client_profiles")
+}
+
+// ==================== BARBERSHOPS ====================
+
+model Barbershop {
+  id             String   @id @default(uuid())
+  name           String
+  slug           String   @unique
+  description    String?
+  address        String
+  city           String
+  state          String
+  country        String   @default("CO")
+  latitude       Float
+  longitude      Float
+  phone          String
+  email          String?
+  logoUrl        String?
+  coverImageUrl  String?
+  images         String[]
+  rating         Float    @default(0)
+  totalReviews   Int      @default(0)
+  isActive       Boolean  @default(true)
+  ownerId        String
+  qrSecret       String   @unique @default(uuid())
+  workingHours   Json     @default("[]")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  owner        User           @relation("BarbershopOwner", fields: [ownerId], references: [id])
+  barbers      BarberProfile[]
+  services     Service[]
+  appointments Appointment[]
+  queueEntries QueueEntry[]
+  subscription Subscription?
+  reviews      Review[]
+
+  @@map("barbershops")
+}
+
+model Service {
+  id              String   @id @default(uuid())
+  barbershopId    String
+  barberId        String?
+  name            String
+  description     String?
+  durationMinutes Int      @default(30)
+  price           Float
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  barbershop   Barbershop     @relation(fields: [barbershopId], references: [id], onDelete: Cascade)
+  barber       BarberProfile? @relation("BarberServices", fields: [barberId], references: [id])
+  appointments Appointment[]
+
+  @@map("services")
+}
+
+model Review {
+  id           String   @id @default(uuid())
+  barbershopId String
+  barberId     String?
+  clientId     String
+  rating       Int
+  comment      String?
+  createdAt    DateTime @default(now())
+
+  barbershop Barbershop    @relation(fields: [barbershopId], references: [id])
+  client     ClientProfile @relation(fields: [clientId], references: [id])
+
+  @@map("reviews")
+}
+
+// ==================== APPOINTMENTS ====================
+
+model Appointment {
+  id                 String            @id @default(uuid())
+  barbershopId       String
+  barberId           String
+  clientId           String
+  serviceId          String
+  serviceIds         String[]          @default([])
+  status             AppointmentStatus @default(PENDING)
+  scheduledAt        DateTime
+  durationMinutes    Int
+  price              Float
+  notes              String?
+  cancellationReason String?
+  cancelledAt        DateTime?
+  completedAt        DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  barbershop Barbershop    @relation(fields: [barbershopId], references: [id])
+  barber     BarberProfile @relation("BarberAppointments", fields: [barberId], references: [id])
+  client     ClientProfile @relation("ClientAppointments", fields: [clientId], references: [id])
+  service    Service       @relation(fields: [serviceId], references: [id])
+  payment    Payment?
+
+  @@map("appointments")
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+// ==================== VIRTUAL QUEUE ====================
+
+model QueueEntry {
+  id                      String      @id @default(uuid())
+  barbershopId            String
+  clientId                String
+  barberId                String?
+  position                Int
+  estimatedWaitMinutes    Int         @default(0)
+  status                  QueueStatus @default(WAITING)
+  joinedAt                DateTime    @default(now())
+  calledAt                DateTime?
+  servedAt                DateTime?
+  lastLocationLat         Float?
+  lastLocationLng         Float?
+  lastLocationUpdatedAt   DateTime?
+  geofenceWarningsSent    Int         @default(0)
+  updatedAt               DateTime    @updatedAt
+
+  barbershop Barbershop    @relation(fields: [barbershopId], references: [id])
+  client     ClientProfile @relation("ClientQueue", fields: [clientId], references: [id])
+  barber     BarberProfile? @relation("BarberQueue", fields: [barberId], references: [id])
+
+  @@map("queue_entries")
+}
+
+enum QueueStatus {
+  WAITING
+  IN_SERVICE
+  COMPLETED
+  CANCELLED
+  GEOFENCE_LOST
+}
+
+// ==================== SUBSCRIPTIONS ====================
+
+model Plan {
+  id                       String   @id @default(uuid())
+  name                     String   @unique
+  displayName              String
+  description              String
+  priceMonthly             Float
+  priceYearly              Float
+  maxBarbers               Int
+  maxAppointmentsPerMonth  Int
+  features                 String[]
+  isActive                 Boolean  @default(true)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id           String             @id @default(uuid())
+  barbershopId String?            @unique
+  userId       String?
+  planId       String
+  status       SubscriptionStatus @default(PENDING_PAYMENT)
+  startDate    DateTime
+  endDate      DateTime
+  renewalDate  DateTime
+  autoRenew    Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  barbershop Barbershop? @relation(fields: [barbershopId], references: [id])
+  user       User?       @relation(fields: [userId], references: [id])
+  plan       Plan        @relation(fields: [planId], references: [id])
+  payments   Payment[]
+
+  @@map("subscriptions")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  PENDING_PAYMENT
+  TRIAL
+}
+
+// ==================== PAYMENTS ====================
+
+model Payment {
+  id               String        @id @default(uuid())
+  subscriptionId   String?
+  appointmentId    String?       @unique
+  amount           Float
+  commissionAmount Float?
+  barberAmount     Float?
+  currency         String        @default("COP")
+  method           PaymentMethod
+  status           PaymentStatus @default(PENDING)
+  referenceId      String?
+  transactionId    String?
+  receipt          String?
+  metadata         Json?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+  appointment  Appointment?  @relation(fields: [appointmentId], references: [id])
+
+  @@map("payments")
+}
+
+enum PaymentMethod {
+  PSE
+  CREDIT_CARD
+  DEBIT_CARD
+  BANK_TRANSFER
+  CASH
+  NEQUI
+  DAVIPLATA
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  VOIDED
+  ERROR
+}
+
+// ==================== NOTIFICATIONS ====================
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  data      Json?
+  isRead    Boolean          @default(false)
+  sentAt    DateTime         @default(now())
+  readAt    DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+  @@index([userId, isRead])
+  @@index([userId, sentAt])
+}
+
+// ==================== SUPPORT ====================
+
+model SupportTicket {
+  id        String              @id @default(uuid())
+  userId    String?
+  email     String?
+  subject   String
+  message   String
+  status    SupportTicketStatus @default(OPEN)
+  priority  SupportPriority     @default(NORMAL)
+  source    String              @default("web")  // "web" | "mobile"
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  user    User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  replies SupportReply[]
+
+  @@map("support_tickets")
+  @@index([userId])
+  @@index([status])
+}
+
+model SupportReply {
+  id        String   @id @default(uuid())
+  ticketId  String
+  message   String
+  isAdmin   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@map("support_replies")
+}
+
+enum SupportTicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum SupportPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum NotificationType {
+  QUEUE_JOINED
+  QUEUE_POSITION_UPDATED
+  QUEUE_CALLED
+  QUEUE_GEOFENCE_WARNING
+  QUEUE_GEOFENCE_LOST
+  QUEUE_CLIENT_JOINED
+  QUEUE_CLIENT_LEFT
+  APPOINTMENT_BOOKED
+  APPOINTMENT_CONFIRMED
+  APPOINTMENT_REMINDER
+  APPOINTMENT_CANCELLED
+  APPOINTMENT_COMPLETED
+  SUBSCRIPTION_EXPIRING_SOON
+  SUBSCRIPTION_EXPIRED
+  SUBSCRIPTION_RENEWED
+  PAYMENT_RECEIVED
+  PAYMENT_FAILED
+  WELCOME
+  PROMOTION
+}

@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(npm install:*)",
+      "Bash(pnpm --version)",
+      "Bash(docker --version)",
+      "Bash(docker info:*)",
+      "Bash(ls:*)",
+      "Bash(node --version)",
+      "Bash(wc -l \"C:\\\\Users\\\\JORGE GARZON\\\\BARBERPROSUITE/apps/web/src/components/landing/\"*.tsx)",
+      "Bash(wc -l \"C:\\\\Users\\\\JORGE GARZON\\\\BARBERPROSUITE/apps/api/src/modules/\"*/*.ts)",
+      "Bash(curl -s -X POST http://localhost:3000/api/v1/auth/login -H \"Content-Type: application/json\" -d \"{\\\\\"email\\\\\":\\\\\"admin@barberprosuite.com\\\\\",\\\\\"password\\\\\":\\\\\"Admin@2025!\\\\\"}\")",
+      "Bash(curl -s http://localhost:3000/api/v1/barbershops -H \"Content-Type: application/json\")",
+      "Bash(curl -s \"http://localhost:3000/api/v1/users?page=1&limit=5\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2NzU0YzZiYS0wOGU5LTRlMzAtODU0Zi05MTkzNzZmNzQxNDEiLCJlbWFpbCI6ImFkbWluQGJhcmJlcnByb3N1aXRlLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3NzA0OTgwOCwiZXhwIjoxNzc3NjU0NjA4fQ.-8Ddi7Zlx0iz_1qtJLCXmLo-bl_ojZ2RwkLb6dBdJ9Y\")",
+      "Bash(python3 -c ':*)",
+      "Bash(python -c ':*)",
+      "Bash(identify \"C:/Users/JORGE GARZON/BARBERPROSUITE/BarberProSuite.png\")",
+      "Bash(node -e ':*)",
+      "Bash(xargs grep:*)",
+      "Bash(npx prisma:*)",
+      "Bash(PGPASSWORD=barber_pass psql:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx next:*)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('expo',{}\\).get\\('scheme','NO_SCHEME'\\)\\)\\)\")",
+      "Bash(git config:*)",
+      "Bash(adb devices:*)",
+      "Bash(\"C:/Program Files/Android/Android Studio/jbr/bin/java.exe\" -version)",
+      "WebFetch(domain:expo.dev)",
+      "Bash(node:*)",
+      "Bash(npm view:*)",
+      "Bash(xargs wc:*)",
+      "Bash(npx expo:*)"
+    ]
+  }
+}
