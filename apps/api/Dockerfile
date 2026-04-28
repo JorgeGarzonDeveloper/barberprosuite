@@ -10,8 +10,8 @@ RUN npm install -g pnpm
 
 # Stage 2: Dependencies
 FROM base AS deps
-COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile
+COPY package.json ./
+RUN pnpm install --no-frozen-lockfile
 
 # Stage 3: Builder
 FROM base AS builder
