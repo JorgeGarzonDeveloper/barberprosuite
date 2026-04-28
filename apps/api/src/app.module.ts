@@ -46,22 +46,28 @@ import { BarberModule } from "./modules/barber/barber.module";
     // Queue (Bull + Redis)
     BullModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        redis: {
-          host: config.get("REDIS_HOST") || "localhost",
-          port: config.get<number>("REDIS_PORT") || 6379,
-          password: config.get("REDIS_PASSWORD") || undefined,
-        },
-        defaultJobOptions: {
-          removeOnComplete: 100,
-          removeOnFail: 50,
-          attempts: 3,
-          backoff: {
-            type: "exponential",
-            delay: 1000,
+      useFactory: (config: ConfigService) => {
+        const redisUrl = config.get<string>("REDIS_URL");
+        const redisConfig = redisUrl
+          ? { url: redisUrl }
+          : {
+              host: config.get("REDIS_HOST") || "localhost",
+              port: config.get<number>("REDIS_PORT") || 6379,
+              password: config.get("REDIS_PASSWORD") || undefined,
+            };
+        return {
+          redis: redisConfig,
+          defaultJobOptions: {
+            removeOnComplete: 100,
+            removeOnFail: 50,
+            attempts: 3,
+            backoff: {
+              type: "exponential",
+              delay: 1000,
+            },
           },
-        },
-      }),
+        };
+      },
     }),
 
     // Cache (Redis)

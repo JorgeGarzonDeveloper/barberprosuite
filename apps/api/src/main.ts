@@ -70,7 +70,7 @@ async function bootstrap() {
     });
   }
 
-  const port = configService.get<number>("APP_PORT") || 3000;
+  const port = configService.get<number>("PORT") || configService.get<number>("APP_PORT") || 3000;
   await app.listen(port);
 
   console.log(`\n🚀 BarberProSuite API running on: http://localhost:${port}/api/v1`);
