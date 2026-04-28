@@ -375,7 +375,7 @@ export class PaymentsService {
     const publicUrl =
       this.config.get("NGROK_URL") ||
       this.config.get("APP_URL") ||
-      "http://localhost:3000";
+      "https://api-production-5c73.up.railway.app";
 
     const mobileCallbackUrl = `${publicUrl}/api/v1/payments/mobile-callback`;
     const redirectUrl = customRedirectUrl ?? mobileCallbackUrl;
@@ -501,7 +501,7 @@ export class PaymentsService {
     const publicUrl =
       this.config.get("NGROK_URL") ||
       this.config.get("APP_URL") ||
-      "http://localhost:3000";
+      "https://api-production-5c73.up.railway.app";
 
     const mobileCallbackUrl = `${publicUrl}/api/v1/payments/mobile-callback?appointmentId=${appointment.id}`;
 
