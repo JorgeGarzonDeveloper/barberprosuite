@@ -1,31 +1,34 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import * as nodemailer from "nodemailer";
+import * as sgMail from "@sendgrid/mail";
 
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private transporter: nodemailer.Transporter;
 
   constructor(private config: ConfigService) {
-    this.transporter = nodemailer.createTransport({
-      host: this.config.get("SMTP_HOST"),
-      port: this.config.get<number>("SMTP_PORT") || 587,
-      secure: false, // STARTTLS en puerto 587
-      auth: {
-        user: this.config.get("SMTP_USER"),
-        pass: this.config.get("SMTP_PASS"),
-      },
-      tls: { rejectUnauthorized: false },
-    });
+    const apiKey = this.config.get<string>("SENDGRID_API_KEY");
+    if (apiKey) {
+      sgMail.setApiKey(apiKey);
+    } else {
+      this.logger.warn("SENDGRID_API_KEY no configurada — emails desactivados");
+    }
   }
 
   async sendOtp(email: string, firstName: string, code: string) {
-    const from = this.config.get("SMTP_USER");
+    const apiKey = this.config.get<string>("SENDGRID_API_KEY");
+    if (!apiKey) {
+      this.logger.warn(`OTP para ${email}: ${code} (email desactivado, sin API key)`);
+      return;
+    }
+
     try {
-      await this.transporter.sendMail({
-        from: `"BarberProSuite" <${from}>`,
+      await sgMail.send({
         to: email,
+        from: {
+          email: "notificaciones@jorgegarzondeveloper.com",
+          name: "BarberProSuite",
+        },
         subject: "Tu código de verificación - BarberProSuite",
         html: `
           <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#0a0a0f;color:white;border-radius:16px;overflow:hidden;">
