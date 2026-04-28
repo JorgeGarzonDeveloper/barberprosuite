@@ -1,9 +1,8 @@
 [build]
 builder = "NIXPACKS"
-buildCommand = "pnpm install --no-frozen-lockfile && npx prisma generate && ./node_modules/.bin/nest build"
 
 [deploy]
-preDeployCommand = "npx prisma migrate deploy"
+preDeployCommand = "pnpm install --no-frozen-lockfile && npx prisma generate && ./node_modules/.bin/nest build && npx prisma migrate deploy"
 startCommand = "node dist/main"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
