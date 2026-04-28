@@ -24,70 +24,59 @@ async function main() {
   });
   console.log("✅ Admin created:", admin.email);
 
-  // Plans
+  // Desactivar planes anteriores
+  await prisma.plan.updateMany({
+    where: { name: { in: ["basic", "professional", "premium"] } },
+    data: { isActive: false },
+  });
+
+  // Plans — un solo plan todo incluido
   const plans = await Promise.all([
     prisma.plan.upsert({
-      where: { name: "basic" },
-      update: {},
-      create: {
-        name: "basic",
-        displayName: "Básico",
-        description: "Perfecto para barberías pequeñas",
-        priceMonthly: 49900,
-        priceYearly: 499000,
-        maxBarbers: 2,
-        maxAppointmentsPerMonth: 100,
+      where: { name: "pro" },
+      update: {
+        displayName: "BarberPro",
+        description: "Todo lo que tu barbería necesita",
+        priceMonthly: 59900,
+        priceYearly: 599000,
+        maxBarbers: -1,
+        maxAppointmentsPerMonth: -1,
+        isActive: true,
         features: [
-          "Gestión de citas",
-          "Cola virtual",
-          "Perfil de barbería",
-          "Notificaciones básicas",
-        ],
-      },
-    }),
-    prisma.plan.upsert({
-      where: { name: "professional" },
-      update: {},
-      create: {
-        name: "professional",
-        displayName: "Profesional",
-        description: "Para barberías en crecimiento",
-        priceMonthly: 99900,
-        priceYearly: 999000,
-        maxBarbers: 5,
-        maxAppointmentsPerMonth: 500,
-        features: [
-          "Todo lo del plan Básico",
-          "Hasta 5 barberos",
+          "Cola virtual ilimitada",
+          "Citas ilimitadas",
+          "QR personalizado",
           "Estadísticas avanzadas",
-          "Pagos en línea",
+          "Pagos online con Wompi",
+          "Notificaciones push",
+          "Panel admin completo",
           "Soporte prioritario",
+          "Primer mes a mitad de precio ($29.950)",
         ],
       },
-    }),
-    prisma.plan.upsert({
-      where: { name: "premium" },
-      update: {},
       create: {
-        name: "premium",
-        displayName: "Premium",
-        description: "Para cadenas y franquicias",
-        priceMonthly: 199900,
-        priceYearly: 1999000,
-        maxBarbers: -1, // Ilimitado
+        name: "pro",
+        displayName: "BarberPro",
+        description: "Todo lo que tu barbería necesita",
+        priceMonthly: 59900,
+        priceYearly: 599000,
+        maxBarbers: -1,
         maxAppointmentsPerMonth: -1,
         features: [
-          "Todo lo del plan Profesional",
-          "Barberos ilimitados",
-          "Multi-sucursal",
-          "API access",
-          "Branding personalizado",
-          "Soporte 24/7",
+          "Cola virtual ilimitada",
+          "Citas ilimitadas",
+          "QR personalizado",
+          "Estadísticas avanzadas",
+          "Pagos online con Wompi",
+          "Notificaciones push",
+          "Panel admin completo",
+          "Soporte prioritario",
+          "Primer mes a mitad de precio ($29.950)",
         ],
       },
     }),
   ]);
-  console.log(`✅ ${plans.length} planes creados`);
+  console.log(`✅ ${plans.length} plan creado`);
 
   // Demo barbershop
   const ownerHash = await bcrypt.hash("Barber@2025!", 12);

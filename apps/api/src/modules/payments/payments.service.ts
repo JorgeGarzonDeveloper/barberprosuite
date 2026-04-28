@@ -350,8 +350,25 @@ export class PaymentsService {
 
     if (!subscription) throw new NotFoundException("Suscripción no encontrada");
 
+    // Descuento del 50% para el primer mes (sin historial previo de pago)
+    const userId = subscription.userId;
+    const hasPreviousPaidSub = userId
+      ? await this.prisma.subscription.count({
+          where: {
+            userId,
+            status: { in: ["ACTIVE", "EXPIRED"] },
+            id: { not: subscriptionId },
+          },
+        })
+      : 1;
+    const isFirstSubscription = hasPreviousPaidSub === 0;
+    const basePrice = subscription.plan.priceMonthly;
+    const finalPrice = isFirstSubscription
+      ? Math.round(basePrice * 0.5)
+      : basePrice;
+
     const reference = `BPS-${subscriptionId.slice(0, 8)}-${Date.now()}`;
-    const amountInCents = Math.round(subscription.plan.priceMonthly * 100);
+    const amountInCents = Math.round(finalPrice * 100);
 
     // Usar NGROK_URL si está disponible (desarrollo local con HTTPS público)
     // Wompi rechaza IPs privadas y URLs sin HTTPS
@@ -373,7 +390,7 @@ export class PaymentsService {
     await this.prisma.payment.create({
       data: {
         subscriptionId,
-        amount: subscription.plan.priceMonthly,
+        amount: finalPrice,
         currency: "COP",
         method: PaymentMethod.BANK_TRANSFER,
         status: PaymentStatus.PENDING,
