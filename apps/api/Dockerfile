@@ -1,33 +1,26 @@
 # ============================================================
-# BarberProSuite API - Dockerfile Multi-stage
+# BarberProSuite API - Dockerfile
 # ============================================================
 
-# Stage 1: Base
-FROM node:20-alpine AS base
+FROM node:20-alpine AS builder
 RUN apk add --no-cache libc6-compat openssl
-RUN npm install -g pnpm
+RUN npm install -g pnpm @nestjs/cli
 WORKDIR /app
 
-# Stage 2: Dependencies
-FROM base AS deps
+# Instalar dependencias (dev incluidas para poder compilar)
 COPY package.json ./
 COPY prisma ./prisma
 RUN pnpm install --no-frozen-lockfile
 
-# Stage 3: Builder
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/prisma ./prisma
+# Generar cliente Prisma y compilar
 COPY . .
 RUN npx prisma generate
-RUN pnpm run build
+RUN nest build
 
-# Stage 4: Production
+# ── Production ──────────────────────────────────────────────
 FROM node:20-alpine AS production
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
-RUN npm install -g pnpm
 
 ENV NODE_ENV=production
 
