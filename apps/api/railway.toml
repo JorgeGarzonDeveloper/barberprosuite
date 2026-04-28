@@ -1,6 +1,6 @@
 [build]
 builder = "NIXPACKS"
-buildCommand = "npm install -g @nestjs/cli && pnpm install --no-frozen-lockfile && npx prisma generate && nest build"
+buildCommand = "pnpm install --no-frozen-lockfile && npx prisma generate && ./node_modules/.bin/nest build"
 
 [deploy]
 preDeployCommand = "npx prisma migrate deploy"
