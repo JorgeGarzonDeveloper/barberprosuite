@@ -55,6 +55,8 @@
     "geolib": "^3.3.4",
     "@aws-sdk/client-s3": "^3.726.0",
     "@sendgrid/mail": "^8.1.4",
+    "nodemailer": "^6.9.16",
+    "@types/nodemailer": "^6.4.17",
     "twilio": "^5.4.4",
     "crypto-js": "^4.2.0",
     "helmet": "^8.0.0",

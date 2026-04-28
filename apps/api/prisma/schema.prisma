@@ -26,6 +26,8 @@ model User {
   fcmToken      String?
   emailVerified Boolean    @default(false)
   phoneVerified Boolean    @default(false)
+  otpCode       String?
+  otpExpiresAt  DateTime?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 

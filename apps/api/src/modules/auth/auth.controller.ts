@@ -15,6 +15,7 @@ import { RegisterDto } from "./dto/register.dto";
 import { LoginDto } from "./dto/login.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { UpdateFcmTokenDto } from "./dto/update-fcm-token.dto";
+import { VerifyOtpDto, ResendOtpDto } from "./dto/verify-otp.dto";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 
 @ApiTags("auth")
@@ -23,9 +24,23 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post("register")
-  @ApiOperation({ summary: "Registrar nuevo usuario" })
+  @ApiOperation({ summary: "Registrar nuevo usuario (envía OTP al correo)" })
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
+  }
+
+  @Post("verify-otp")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Verificar código OTP enviado al correo" })
+  verifyOtp(@Body() dto: VerifyOtpDto) {
+    return this.authService.verifyOtp(dto);
+  }
+
+  @Post("resend-otp")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Reenviar código OTP al correo" })
+  resendOtp(@Body() dto: ResendOtpDto) {
+    return this.authService.resendOtp(dto);
   }
 
   @Post("login")
