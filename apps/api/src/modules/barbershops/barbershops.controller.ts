@@ -27,12 +27,14 @@ export class BarbershopsController {
   @ApiQuery({ name: "page", required: false })
   @ApiQuery({ name: "limit", required: false })
   @ApiQuery({ name: "search", required: false })
+  @ApiQuery({ name: "includeInactive", required: false })
   findAll(
     @Query("page") page = 1,
     @Query("limit") limit = 20,
-    @Query("search") search?: string
+    @Query("search") search?: string,
+    @Query("includeInactive") includeInactive?: string
   ) {
-    return this.barbershopsService.findAll(+page, +limit, search);
+    return this.barbershopsService.findAll(+page, +limit, search, includeInactive === "true");
   }
 
   @Get("nearby")

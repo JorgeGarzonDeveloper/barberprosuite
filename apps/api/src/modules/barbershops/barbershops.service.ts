@@ -49,21 +49,26 @@ export class BarbershopsService {
     return shopsWithDistance;
   }
 
-  async findAll(page = 1, limit = 20, search?: string) {
+  async findAll(page = 1, limit = 20, search?: string, includeInactive = false) {
+    const activeFilter = includeInactive ? {} : { isActive: true };
     const where = search
       ? {
+          ...activeFilter,
           OR: [
             { name: { contains: search, mode: "insensitive" as any } },
             { city: { contains: search, mode: "insensitive" as any } },
             { address: { contains: search, mode: "insensitive" as any } },
           ],
         }
-      : {};
+      : activeFilter;
 
     const [shops, total] = await Promise.all([
       this.prisma.barbershop.findMany({
-        where: { ...where, isActive: true },
-        include: { services: { where: { isActive: true } } },
+        where,
+        include: {
+          services: { where: { isActive: true } },
+          owner: { select: { firstName: true, lastName: true } },
+        },
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { rating: "desc" },
