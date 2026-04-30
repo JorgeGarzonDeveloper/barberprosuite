@@ -16,7 +16,7 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client
 
 @Injectable()
 export class BarbershopsService {
-  private s3 = new S3Client({ region: process.env.AWS_REGION || "us-east-1" });
+  private s3 = new S3Client({ region: process.env.AWS_REGION || "us-east-2" });
   private s3Bucket = process.env.AWS_S3_BUCKET || "barberprosuite-media";
 
   constructor(
@@ -352,7 +352,8 @@ export class BarbershopsService {
           ContentType: "image/jpeg",
         })
       );
-      imageUrls.push(`https://${this.s3Bucket}.s3.amazonaws.com/${key}`);
+      const region = process.env.AWS_REGION || "us-east-2";
+      imageUrls.push(`https://${this.s3Bucket}.s3.${region}.amazonaws.com/${key}`);
     }
 
     const updated = await this.prisma.barbershop.update({
