@@ -58,9 +58,9 @@ export class AuthService {
       },
     });
 
-    if (user.role === "CLIENT") {
-      await this.prisma.clientProfile.create({ data: { userId: user.id } });
-    } else if (user.role === "BARBER") {
+    // Todo usuario tiene perfil de cliente (un barbero también puede pedir citas en otras barberías)
+    await this.prisma.clientProfile.create({ data: { userId: user.id } });
+    if (user.role === "BARBER") {
       await this.prisma.barberProfile.create({ data: { userId: user.id } });
     }
 
