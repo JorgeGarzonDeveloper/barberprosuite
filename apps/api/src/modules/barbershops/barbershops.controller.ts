@@ -3,11 +3,16 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
   UseGuards,
+  UploadedFiles,
+  UseInterceptors,
 } from "@nestjs/common";
+import { FilesInterceptor } from "@nestjs/platform-express";
+import { memoryStorage } from "multer";
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from "@nestjs/swagger";
 import { AuthGuard } from "@nestjs/passport";
 import { BarbershopsService } from "./barbershops.service";
@@ -104,16 +109,69 @@ export class BarbershopsController {
     return this.barbershopsService.regenerateQr(id, ownerId);
   }
 
+  @Get(":id/can-review")
+  @UseGuards(AuthGuard("jwt"))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Verificar si el cliente puede calificar esta barbería" })
+  canClientReview(
+    @Param("id") id: string,
+    @CurrentUser("id") userId: string
+  ) {
+    return this.barbershopsService.canClientReview(id, userId);
+  }
+
   @Post(":id/reviews")
   @UseGuards(AuthGuard("jwt"))
   @ApiBearerAuth()
-  @ApiOperation({ summary: "Agregar reseña" })
+  @ApiOperation({ summary: "Agregar reseña (solo tras cita COMPLETED)" })
   addReview(
     @Param("id") id: string,
-    @CurrentUser("id") clientId: string,
+    @CurrentUser("id") userId: string,
     @Body("rating") rating: number,
-    @Body("comment") comment?: string
+    @Body("comment") comment?: string,
+    @Body("appointmentId") appointmentId?: string
   ) {
-    return this.barbershopsService.addReview(id, clientId, rating, comment);
+    return this.barbershopsService.addReview(id, userId, rating, comment, appointmentId);
+  }
+
+  @Post(":id/images")
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @Roles("BARBER", "ADMIN")
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Subir imágenes al carrusel de la barbería (multipart/form-data, campo 'images')" })
+  @UseInterceptors(
+    FilesInterceptor("images", 10, {
+      storage: memoryStorage(),
+      fileFilter: (req, file, cb) => {
+        if (!file.mimetype.match(/^image\//)) {
+          cb(new Error("Solo se permiten imágenes"), false);
+        } else {
+          cb(null, true);
+        }
+      },
+      limits: { fileSize: 5 * 1024 * 1024 },
+    })
+  )
+  async uploadImages(
+    @Param("id") id: string,
+    @CurrentUser("id") ownerId: string,
+    @CurrentUser("role") userRole: string,
+    @UploadedFiles() files: Express.Multer.File[]
+  ) {
+    return this.barbershopsService.addImages(id, ownerId, files, userRole);
+  }
+
+  @Delete(":id/images")
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @Roles("BARBER", "ADMIN")
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Eliminar imagen del carrusel" })
+  removeImage(
+    @Param("id") id: string,
+    @CurrentUser("id") ownerId: string,
+    @CurrentUser("role") userRole: string,
+    @Body("imageUrl") imageUrl: string
+  ) {
+    return this.barbershopsService.removeImage(id, ownerId, imageUrl, userRole);
   }
 }

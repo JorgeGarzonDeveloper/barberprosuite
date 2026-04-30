@@ -86,6 +86,7 @@ model BarberProfile {
   appointments Appointment[] @relation("BarberAppointments")
   queueEntries QueueEntry[]  @relation("BarberQueue")
   services     Service[]     @relation("BarberServices")
+  reviews      Review[]      @relation("BarberReviews")
 
   @@map("barber_profiles")
 }
@@ -119,7 +120,7 @@ model Barbershop {
   country        String   @default("CO")
   latitude       Float
   longitude      Float
-  phone          String
+  phone          String?
   email          String?
   logoUrl        String?
   coverImageUrl  String?
@@ -164,16 +165,18 @@ model Service {
 }
 
 model Review {
-  id           String   @id @default(uuid())
-  barbershopId String
-  barberId     String?
-  clientId     String
-  rating       Int
-  comment      String?
-  createdAt    DateTime @default(now())
+  id             String   @id @default(uuid())
+  barbershopId   String
+  barberId       String?
+  clientId       String
+  appointmentId  String?  @unique
+  rating         Int
+  comment        String?
+  createdAt      DateTime @default(now())
 
-  barbershop Barbershop    @relation(fields: [barbershopId], references: [id])
-  client     ClientProfile @relation(fields: [clientId], references: [id])
+  barbershop  Barbershop     @relation(fields: [barbershopId], references: [id])
+  client      ClientProfile  @relation(fields: [clientId], references: [id])
+  barber      BarberProfile? @relation("BarberReviews", fields: [barberId], references: [id])
 
   @@map("reviews")
 }

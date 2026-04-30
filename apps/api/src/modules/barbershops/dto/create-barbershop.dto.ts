@@ -46,9 +46,10 @@ export class CreateBarbershopDto {
   @Max(180)
   longitude: number;
 
-  @ApiProperty({ example: "+573001234567" })
+  @ApiProperty({ example: "+573001234567", required: false })
+  @IsOptional()
   @IsString()
-  phone: string;
+  phone?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
