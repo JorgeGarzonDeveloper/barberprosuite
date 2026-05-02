@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "next": "15.3.2",
+    "next": "15.5.15",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "@tanstack/react-query": "^5.64.1",
@@ -38,6 +38,6 @@
     "autoprefixer": "^10.4.20",
     "@eslint/js": "^9.18.0",
     "eslint": "^9.18.0",
-    "eslint-config-next": "15.3.2"
+    "eslint-config-next": "15.5.15"
   }
 }
