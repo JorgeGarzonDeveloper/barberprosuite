@@ -8,7 +8,7 @@ import Spinner from "@/components/ui/Spinner";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 // Rutas accesibles sin autenticación dentro del layout de app
-const PUBLIC_APP_ROUTES = ["/home"];
+const PUBLIC_APP_ROUTES = ["/home", "/map", "/barbershop"];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();

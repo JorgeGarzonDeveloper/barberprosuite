@@ -24,11 +24,13 @@ import {
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
+import { useAuthStore } from "@/store/auth.store";
 
 export default function BarbershopPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuthStore();
   const [activeTab, setActiveTab] = useState<"services" | "reviews">("services");
   const [expandedBarber, setExpandedBarber] = useState<string | null>(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -43,7 +45,16 @@ export default function BarbershopPage() {
   const { data: canReviewData } = useQuery({
     queryKey: ["can-review", id],
     queryFn: () => barbershopsApi.canReview(id),
+    enabled: isAuthenticated,
   });
+
+  function requireAuth(action: () => void) {
+    if (!isAuthenticated) {
+      router.push("/auth/login");
+      return;
+    }
+    action();
+  }
 
   const reviewMutation = useMutation({
     mutationFn: () =>
@@ -117,7 +128,7 @@ export default function BarbershopPage() {
         <div className="flex gap-3 mb-6">
           <Button
             fullWidth
-            onClick={() => router.push(`/book/${shop.id}`)}
+            onClick={() => requireAuth(() => router.push(`/book/${shop.id}`))}
             className="gap-2"
           >
             <Calendar size={16} />
@@ -126,7 +137,7 @@ export default function BarbershopPage() {
           {canReviewData?.canReview && (
             <Button
               variant="secondary"
-              onClick={() => setShowReviewModal(true)}
+              onClick={() => requireAuth(() => setShowReviewModal(true))}
               className="gap-2 shrink-0"
             >
               <Star size={16} />
@@ -176,7 +187,7 @@ export default function BarbershopPage() {
                     )
                   }
                   onBook={() =>
-                    router.push(`/book/${shop.id}?barberId=${barber.id}`)
+                    requireAuth(() => router.push(`/book/${shop.id}?barberId=${barber.id}`))
                   }
                 />
               ))
