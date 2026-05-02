@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/auth.store";
 import { useQueueStore } from "@/store/queue.store";
 import { barbershopsApi } from "@/lib/api/barbershops.api";
+import { subscriptionsApi } from "@/lib/api/subscriptions.api";
 import { formatCOP, getGreeting } from "@/lib/utils";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
@@ -72,8 +73,16 @@ export default function HomePage() {
 
   const nearby = (nearbyData || []).slice(0, 5);
 
+  const { data: subscriptionData } = useQuery({
+    queryKey: ["my-subscription-home"],
+    queryFn: () => subscriptionsApi.getMy().catch(() => null),
+    enabled: user?.role === "BARBER",
+    staleTime: 30_000,
+  });
+
   const hasPendingSubscription =
-    user?.role === "BARBER" && false; // Would check from subscription store
+    user?.role === "BARBER" && subscriptionData !== undefined &&
+    (subscriptionData === null || subscriptionData?.data?.status !== "ACTIVE");
 
   return (
     <div className="page-container">

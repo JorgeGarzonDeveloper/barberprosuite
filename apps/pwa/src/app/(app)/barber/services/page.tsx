@@ -212,22 +212,24 @@ export default function BarberServicesPage() {
             error={errors.description?.message}
             {...register("description")}
           />
-          <Input
-            label="Precio (COP)"
-            type="number"
-            placeholder="25000"
-            error={errors.price?.message}
-            leftIcon={<DollarSign size={14} />}
-            {...register("price")}
-          />
-          <Input
-            label="Duración (minutos)"
-            type="number"
-            placeholder="30"
-            error={errors.durationMinutes?.message}
-            leftIcon={<Clock size={14} />}
-            {...register("durationMinutes")}
-          />
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Precio (COP)"
+              type="number"
+              placeholder="25000"
+              error={errors.price?.message}
+              leftIcon={<DollarSign size={14} />}
+              {...register("price")}
+            />
+            <Input
+              label="Duración (min)"
+              type="number"
+              placeholder="30"
+              error={errors.durationMinutes?.message}
+              leftIcon={<Clock size={14} />}
+              {...register("durationMinutes")}
+            />
+          </div>
           <Button
             type="submit"
             loading={isSubmitting || createMutation.isPending || updateMutation.isPending}

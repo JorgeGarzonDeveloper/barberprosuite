@@ -6,7 +6,7 @@ import { appointmentsApi } from "@/lib/api/appointments.api";
 import { subscriptionsApi } from "@/lib/api/subscriptions.api";
 import { authApi } from "@/lib/api/auth.api";
 import Card from "@/components/ui/Card";
-import Badge, { getStatusVariant } from "@/components/ui/Badge";
+import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import { getInitials, getStatusLabel } from "@/lib/utils";
 import {
@@ -15,10 +15,12 @@ import {
   ChevronRight,
   Crown,
   Scissors,
-  Bell,
   Shield,
   HelpCircle,
-  Settings,
+  MapPin,
+  QrCode,
+  AlertCircle,
+  FileText,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -34,9 +36,10 @@ export default function ProfilePage() {
   });
 
   const { data: subscriptionData } = useQuery({
-    queryKey: ["subscription"],
-    queryFn: () => subscriptionsApi.getMy(),
+    queryKey: ["my-subscription"],
+    queryFn: () => subscriptionsApi.getMy().catch(() => null),
     enabled: user?.role === "BARBER",
+    staleTime: 30_000,
   });
 
   const appointments = appointmentsData?.data || [];
@@ -49,6 +52,7 @@ export default function ProfilePage() {
   ).length;
 
   const subscription = subscriptionData?.data;
+  const hasActiveSubscription = subscription?.status === "ACTIVE";
 
   const handleLogout = async () => {
     if (refreshToken) {
@@ -64,14 +68,14 @@ export default function ProfilePage() {
     ...(user?.role === "BARBER"
       ? [
           {
+            icon: <Crown size={18} className="text-primary" />,
+            label: "Mi suscripción",
+            href: "/subscription",
+          },
+          {
             icon: <Scissors size={18} className="text-primary" />,
             label: "Mis servicios",
             href: "/barber/services",
-          },
-          {
-            icon: <Crown size={18} className="text-primary" />,
-            label: "Suscripción",
-            href: "/subscription",
           },
         ]
       : []),
@@ -85,14 +89,29 @@ export default function ProfilePage() {
         ]
       : []),
     {
-      icon: <Bell size={18} className="text-text-secondary" />,
-      label: "Notificaciones",
-      href: "#",
+      icon: <Calendar size={18} className="text-text-secondary" />,
+      label: "Mis citas",
+      href: "/appointments",
+    },
+    {
+      icon: <MapPin size={18} className="text-text-secondary" />,
+      label: "Explorar barberías",
+      href: "/map",
+    },
+    {
+      icon: <QrCode size={18} className="text-text-secondary" />,
+      label: "Unirse a una fila",
+      href: "/scan",
     },
     {
       icon: <HelpCircle size={18} className="text-text-secondary" />,
-      label: "Soporte",
+      label: "Soporte y Ayuda",
       href: "/support",
+    },
+    {
+      icon: <FileText size={18} className="text-text-secondary" />,
+      label: "Términos y Condiciones",
+      href: "#",
     },
   ];
 
@@ -124,8 +143,8 @@ export default function ProfilePage() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 mb-6">
         <Card padding="sm" className="text-center">
-          <p className="text-xl font-bold text-primary">{totalAppointments}</p>
-          <p className="text-text-tertiary text-xs mt-0.5">Total</p>
+          <p className="text-xl font-bold text-white">{totalAppointments}</p>
+          <p className="text-text-tertiary text-xs mt-0.5">Citas</p>
         </Card>
         <Card padding="sm" className="text-center">
           <p className="text-xl font-bold text-success">{completedAppointments}</p>
@@ -137,30 +156,25 @@ export default function ProfilePage() {
         </Card>
       </div>
 
-      {/* Subscription banner for barbers */}
-      {user?.role === "BARBER" && subscription && (
-        <Card className="mb-6 border-primary/20 bg-[rgba(201,162,39,0.04)]">
-          <div className="flex items-center gap-3">
-            <Crown size={20} className="text-primary shrink-0" />
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-white">
-                {subscription.plan?.displayName || "Plan activo"}
-              </p>
-              <p className="text-text-secondary text-xs">
-                Estado:{" "}
-                <span className={`font-medium ${subscription.status === "ACTIVE" ? "text-success" : "text-warning"}`}>
-                  {getStatusLabel(subscription.status)}
-                </span>
-              </p>
-            </div>
-            <button
-              onClick={() => router.push("/subscription")}
-              className="text-primary"
-            >
-              <ChevronRight size={18} />
-            </button>
+      {/* Subscription banner — visible solo si barbero sin suscripción activa */}
+      {user?.role === "BARBER" && subscriptionData !== undefined && !hasActiveSubscription && (
+        <button
+          onClick={() => router.push("/subscription")}
+          className="w-full mb-6 flex items-center gap-3 bg-[rgba(201,162,39,0.08)] border border-[rgba(201,162,39,0.25)] rounded-xl p-4 text-left"
+        >
+          <div className="w-10 h-10 rounded-xl bg-[rgba(201,162,39,0.15)] flex items-center justify-center shrink-0">
+            <AlertCircle size={20} className="text-primary" />
           </div>
-        </Card>
+          <div className="flex-1">
+            <p className="text-sm font-bold text-primary">
+              {subscription ? "Pago pendiente" : "Sin suscripción activa"}
+            </p>
+            <p className="text-xs text-primary/60 mt-0.5">
+              Toca para activar tu plan y empezar a trabajar
+            </p>
+          </div>
+          <ChevronRight size={18} className="text-primary shrink-0" />
+        </button>
       )}
 
       {/* Menu items */}
@@ -171,7 +185,9 @@ export default function ProfilePage() {
             onClick={() => item.href !== "#" && router.push(item.href)}
             className="flex items-center gap-3 px-4 py-3.5 w-full hover:bg-[rgba(255,255,255,0.03)] transition-colors border-b border-[rgba(255,255,255,0.04)] last:border-0"
           >
-            {item.icon}
+            <div className="w-9 h-9 rounded-xl bg-[rgba(201,162,39,0.08)] flex items-center justify-center shrink-0">
+              {item.icon}
+            </div>
             <span className="text-sm text-white flex-1 text-left">
               {item.label}
             </span>
@@ -190,6 +206,10 @@ export default function ProfilePage() {
         <LogOut size={18} />
         Cerrar sesión
       </Button>
+
+      <p className="text-center text-text-tertiary text-xs mt-6">
+        BarberProSuite v1.0.0
+      </p>
     </div>
   );
 }
