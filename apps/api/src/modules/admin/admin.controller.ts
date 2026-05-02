@@ -110,6 +110,10 @@ export class AdminController {
       roles?: string[];
     }
   ) {
+    const vapidKey = this.notificationsService.getVapidPublicKey();
+    if (!vapidKey) {
+      return { sent: false, reason: "VAPID keys not configured in environment" };
+    }
     const roles = body.roles ?? ["CLIENT", "BARBER", "ADMIN"];
     await this.notificationsService.sendWebPushByRole(roles, body.title, body.body);
     return { sent: true };

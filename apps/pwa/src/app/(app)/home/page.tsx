@@ -236,9 +236,9 @@ export default function HomePage() {
                   className="flex gap-3 p-4 bg-[rgba(255,255,255,0.04)] rounded-2xl border border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.12)] transition-all text-left w-full active:scale-[0.98]"
                 >
                   <div className="w-14 h-14 rounded-xl bg-[rgba(255,255,255,0.06)] overflow-hidden shrink-0">
-                    {shop.coverImageUrl || shop.bannerUrl ? (
+                    {(shop.coverImageUrl || (shop as any).images?.[0]) ? (
                       <Image
-                        src={shop.coverImageUrl || shop.bannerUrl || ""}
+                        src={shop.coverImageUrl || (shop as any).images[0]}
                         alt={shop.name}
                         width={56}
                         height={56}

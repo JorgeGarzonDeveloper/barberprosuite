@@ -645,7 +645,8 @@ export default function AdminBarbershopsPage() {
           {loadingQr ? (
             <Loader2 size={40} className="text-primary animate-spin my-8" />
           ) : qrImage ? (
-            <Image
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
               src={qrImage}
               alt="QR code"
               width={220}

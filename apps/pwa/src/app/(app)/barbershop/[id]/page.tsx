@@ -75,7 +75,8 @@ export default function BarbershopPage() {
   if (isLoading) return <PageSpinner />;
   if (!shop) return null;
 
-  const coverImage = shop.bannerUrl || shop.coverImageUrl;
+  const shopImages: string[] = (shop as any).images ?? [];
+  const coverImage = shop.coverImageUrl || shopImages[0] || null;
 
   return (
     <div className="max-w-md mx-auto pb-28">
@@ -123,6 +124,23 @@ export default function BarbershopPage() {
             </div>
           )}
         </div>
+
+        {/* Galería de fotos */}
+        {shopImages.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto pb-1 mb-5 -mx-4 px-4">
+            {shopImages.map((img, i) => (
+              <div key={i} className="shrink-0 w-24 h-24 rounded-xl overflow-hidden bg-[rgba(255,255,255,0.06)]">
+                <Image
+                  src={img}
+                  alt={`Foto ${i + 1}`}
+                  width={96}
+                  height={96}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Action buttons */}
         <div className="flex gap-3 mb-6">
