@@ -12,13 +12,10 @@ export default function RootPage() {
 
   useEffect(() => {
     if (!isLoading) {
-      if (isAuthenticated) {
-        router.replace("/home");
-      } else {
-        router.replace("/auth/login");
-      }
+      // Todos van a /home — autenticado o invitado
+      router.replace("/home");
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isLoading, router]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">

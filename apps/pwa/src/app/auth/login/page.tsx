@@ -98,14 +98,7 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <div className="mt-6 text-center space-y-3">
-          <Link
-            href="/auth/verify-otp"
-            className="block text-sm text-text-secondary hover:text-primary transition-colors"
-          >
-            ¿Tienes un código OTP?{" "}
-            <span className="text-primary font-medium">Verificar</span>
-          </Link>
+        <div className="mt-6 text-center">
           <p className="text-sm text-text-secondary">
             ¿No tienes cuenta?{" "}
             <Link
