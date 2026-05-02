@@ -6,7 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Mail, Lock, Scissors } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
+import Logo from "@/components/ui/Logo";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { authApi } from "@/lib/api/auth.api";
@@ -58,14 +59,8 @@ export default function LoginPage() {
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-8">
       <div className="w-full max-w-sm">
         {/* Logo */}
-        <div className="flex flex-col items-center mb-10">
-          <div className="w-16 h-16 bg-[rgba(201,162,39,0.15)] rounded-2xl flex items-center justify-center mb-4 border border-[rgba(201,162,39,0.2)]">
-            <Scissors size={32} className="text-primary" />
-          </div>
-          <h1 className="text-2xl font-bold text-gold-gradient">BarberProSuite</h1>
-          <p className="text-text-secondary text-sm mt-1">
-            Tu barbería favorita en un clic
-          </p>
+        <div className="flex justify-center mb-10">
+          <Logo variant="full" size="lg" />
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">

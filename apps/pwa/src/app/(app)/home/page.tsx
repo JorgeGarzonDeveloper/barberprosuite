@@ -20,6 +20,7 @@ import {
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import Logo from "@/components/ui/Logo";
 
 function BarbershopSkeleton() {
   return (
@@ -77,11 +78,14 @@ export default function HomePage() {
   return (
     <div className="page-container">
       {/* Header */}
-      <div className="mb-6">
-        <p className="text-text-secondary text-sm">{getGreeting()},</p>
-        <h1 className="text-2xl font-bold text-white">
-          {user?.firstName || "Usuario"} 👋
-        </h1>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <p className="text-text-secondary text-sm">{getGreeting()},</p>
+          <h1 className="text-2xl font-bold text-white">
+            {user?.firstName || "Usuario"} 👋
+          </h1>
+        </div>
+        <Logo variant="icon" size="sm" />
       </div>
 
       {/* Pending subscription banner for barbers */}

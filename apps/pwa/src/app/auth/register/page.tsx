@@ -6,7 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Mail, Lock, User, Phone, Scissors, ChevronRight } from "lucide-react";
+import { Mail, Lock, User, Phone, ChevronRight, Scissors } from "lucide-react";
+import Logo from "@/components/ui/Logo";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Card from "@/components/ui/Card";
@@ -118,10 +119,8 @@ export default function RegisterPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 bg-[rgba(201,162,39,0.15)] rounded-2xl flex items-center justify-center mb-3 border border-[rgba(201,162,39,0.2)]">
-            <Scissors size={28} className="text-primary" />
-          </div>
-          <h1 className="text-xl font-bold text-white">Crear cuenta</h1>
+          <Logo variant="full" size="md" />
+          <h2 className="text-lg font-bold text-white mt-4">Crear cuenta</h2>
           {step === 2 && (
             <p className="text-text-secondary text-sm mt-1">
               Selecciona tu plan de suscripción
