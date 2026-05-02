@@ -85,7 +85,7 @@ export default function HomePage() {
             {user?.firstName || "Usuario"} 👋
           </h1>
         </div>
-        <Logo variant="icon" size="sm" />
+        <Logo variant="full" size="sm" />
       </div>
 
       {/* Pending subscription banner for barbers */}
