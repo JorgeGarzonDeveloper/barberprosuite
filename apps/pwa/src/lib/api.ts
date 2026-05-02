@@ -42,7 +42,13 @@ const processQueue = (error: unknown, token: string | null = null) => {
 };
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Desenvolver el wrapper { success, statusCode, data: {...} } → {...}
+    if (response.data?.success !== undefined && response.data?.data !== undefined) {
+      response.data = response.data.data;
+    }
+    return response;
+  },
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;

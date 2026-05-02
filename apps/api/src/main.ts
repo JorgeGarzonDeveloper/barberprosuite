@@ -14,7 +14,21 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ["log", "warn", "error", "verbose"],
     cors: {
-      origin: process.env.WEB_URL || "http://localhost:3002",
+      origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+        // Permitir requests sin origin (server-to-server, Postman, mobile)
+        if (!origin) return callback(null, true);
+        const allowed = [
+          /^https?:\/\/(.*\.)?barberprosuite\.com$/,
+          /^https?:\/\/.*\.vercel\.app$/,
+          /^http:\/\/localhost:\d+$/,
+          /^http:\/\/192\.168\.\d+\.\d+:\d+$/,
+        ];
+        const extra = [process.env.WEB_URL, process.env.PWA_URL].filter(Boolean) as string[];
+        const isAllowed =
+          allowed.some((pattern) => pattern.test(origin)) ||
+          extra.includes(origin);
+        callback(isAllowed ? null : new Error("Not allowed by CORS"), isAllowed);
+      },
       credentials: true,
     },
   });

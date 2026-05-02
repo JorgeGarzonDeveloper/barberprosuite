@@ -37,10 +37,20 @@ export default function LoginPage() {
       setAuth(res.user, res.accessToken, res.refreshToken);
       router.replace("/home");
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message || "Credenciales incorrectas";
-      setError(Array.isArray(msg) ? msg[0] : msg);
+      const errData = (err as { response?: { data?: { message?: string; error?: string | string[] } } })?.response?.data;
+      const raw = errData?.message ?? errData?.error ?? "Credenciales incorrectas";
+      const msg = Array.isArray(raw) ? raw[0] : raw;
+
+      // Email sin verificar: redirigir a OTP
+      try {
+        const parsed = JSON.parse(msg as string);
+        if (parsed?.requiresVerification) {
+          router.replace(`/auth/verify-otp?email=${encodeURIComponent(parsed.email)}`);
+          return;
+        }
+      } catch { /* no es JSON */ }
+
+      setError(msg as string);
     }
   };
 
