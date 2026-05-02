@@ -11,6 +11,7 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation } from "@nestjs/swagger";
 import { AuthGuard } from "@nestjs/passport";
 import { AdminService } from "./admin.service";
+import { NotificationsService } from "../notifications/notifications.service";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { RolesGuard } from "../../common/guards/roles.guard";
 
@@ -20,7 +21,10 @@ import { RolesGuard } from "../../common/guards/roles.guard";
 @Roles("ADMIN")
 @Controller("admin")
 export class AdminController {
-  constructor(private adminService: AdminService) {}
+  constructor(
+    private adminService: AdminService,
+    private notificationsService: NotificationsService
+  ) {}
 
   @Get("dashboard")
   @ApiOperation({ summary: "Estadísticas del panel admin" })
@@ -93,5 +97,21 @@ export class AdminController {
     @Param("barbershopId") barbershopId: string
   ) {
     return this.adminService.assignBarberToBarbershop(userId, barbershopId);
+  }
+
+  @Post("notifications/send")
+  @ApiOperation({ summary: "Enviar notificación push masiva" })
+  async sendNotification(
+    @Body()
+    body: {
+      title: string;
+      body: string;
+      userIds?: string[];
+      roles?: string[];
+    }
+  ) {
+    const roles = body.roles ?? ["CLIENT", "BARBER", "ADMIN"];
+    await this.notificationsService.sendWebPushByRole(roles, body.title, body.body);
+    return { sent: true };
   }
 }

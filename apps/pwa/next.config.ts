@@ -5,6 +5,7 @@ const withPWA = require("next-pwa")({
   disable: process.env.NODE_ENV === "development",
   register: true,
   skipWaiting: true,
+  customWorkerDir: "worker",
   // Archivos que NO deben ser interceptados por el SW (evita conflictos con Next.js)
   publicExcludes: ["!og-image.png"],
   buildExcludes: [/middleware-manifest\.json$/],
