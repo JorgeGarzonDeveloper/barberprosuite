@@ -17,6 +17,8 @@ import {
   AlertCircle,
   Scissors,
   Calendar,
+  QrCode,
+  LogIn,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -38,7 +40,7 @@ function BarbershopSkeleton() {
 
 export default function HomePage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const { currentEntry, fetchCurrentEntry } = useQueueStore();
   const [userCoords, setUserCoords] = useState<{
     lat: number;
@@ -46,7 +48,7 @@ export default function HomePage() {
   } | null>(null);
 
   useEffect(() => {
-    fetchCurrentEntry();
+    if (isAuthenticated) fetchCurrentEntry();
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) =>
@@ -58,7 +60,7 @@ export default function HomePage() {
           setUserCoords({ lat: 4.7110, lng: -74.0721 }) // Bogotá fallback
       );
     }
-  }, [fetchCurrentEntry]);
+  }, [isAuthenticated, fetchCurrentEntry]);
 
   const { data: nearbyData, isLoading: nearbyLoading } = useQuery({
     queryKey: ["barbershops-nearby", userCoords],
@@ -76,7 +78,7 @@ export default function HomePage() {
   const { data: subscriptionData } = useQuery({
     queryKey: ["my-subscription-home"],
     queryFn: () => subscriptionsApi.getMy().catch(() => null),
-    enabled: user?.role === "BARBER",
+    enabled: isAuthenticated && user?.role === "BARBER",
     staleTime: 30_000,
   });
 
@@ -91,11 +93,24 @@ export default function HomePage() {
         <div>
           <p className="text-text-secondary text-sm">{getGreeting()},</p>
           <h1 className="text-2xl font-bold text-white">
-            {user?.firstName || "Usuario"} 👋
+            {isAuthenticated ? (user?.firstName || "Usuario") : "Invitado"} 👋
           </h1>
         </div>
         <Logo variant="full" size="sm" />
       </div>
+
+      {/* Guest CTA */}
+      {!isAuthenticated && (
+        <div className="mb-5 bg-primary/8 border border-primary/20 rounded-2xl p-4 flex items-center gap-4">
+          <div className="flex-1">
+            <p className="text-white font-bold text-sm mb-0.5">Crea tu cuenta gratis</p>
+            <p className="text-text-secondary text-xs">Gestiona tu agenda y únete a la fila sin esperar</p>
+          </div>
+          <Button size="sm" onClick={() => router.push("/auth/register")} className="shrink-0">
+            Registrarme
+          </Button>
+        </div>
+      )}
 
       {/* Pending subscription banner for barbers */}
       {hasPendingSubscription && (
@@ -121,7 +136,7 @@ export default function HomePage() {
       )}
 
       {/* Active queue */}
-      {currentEntry && (
+      {isAuthenticated && currentEntry && (
         <div className="mb-6">
           <h2 className="text-sm font-semibold text-text-secondary mb-3 uppercase tracking-wide">
             Cola activa
@@ -130,51 +145,67 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Quick actions by role */}
+      {/* Quick actions */}
       <div className="grid grid-cols-2 gap-3 mb-6">
-        {user?.role === "CLIENT" && (
-          <>
-            <Button
-              variant="secondary"
-              size="md"
-              onClick={() => router.push("/map")}
-              className="flex-col h-auto py-4 gap-2"
-            >
-              <MapPin size={20} className="text-primary" />
-              <span className="text-xs">Buscar barbería</span>
-            </Button>
-            <Button
-              variant="secondary"
-              size="md"
-              onClick={() => router.push("/scan")}
-              className="flex-col h-auto py-4 gap-2"
-            >
-              <Scissors size={20} className="text-primary" />
-              <span className="text-xs">Unirse a cola</span>
-            </Button>
-          </>
+        {/* Mapa — siempre visible */}
+        <Button
+          variant="secondary"
+          size="md"
+          onClick={() => router.push("/map")}
+          className="flex-col h-auto py-4 gap-2"
+        >
+          <MapPin size={20} className="text-primary" />
+          <span className="text-xs">Ver mapa</span>
+        </Button>
+
+        {/* Escanear QR — redirige a login si no está autenticado */}
+        <Button
+          variant="secondary"
+          size="md"
+          onClick={() => router.push(isAuthenticated ? "/scan" : "/auth/login")}
+          className="flex-col h-auto py-4 gap-2"
+        >
+          <QrCode size={20} className="text-primary" />
+          <span className="text-xs">Escanear QR</span>
+        </Button>
+
+        {/* Mis citas — solo autenticados */}
+        {isAuthenticated && (
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={() => router.push("/appointments")}
+            className="flex-col h-auto py-4 gap-2"
+          >
+            <Calendar size={20} className="text-primary" />
+            <span className="text-xs">Mis citas</span>
+          </Button>
         )}
-        {(user?.role === "BARBER" || user?.role === "ADMIN") && (
-          <>
-            <Button
-              variant="secondary"
-              size="md"
-              onClick={() => router.push("/barber-queue")}
-              className="flex-col h-auto py-4 gap-2"
-            >
-              <Scissors size={20} className="text-primary" />
-              <span className="text-xs">Gestionar cola</span>
-            </Button>
-            <Button
-              variant="secondary"
-              size="md"
-              onClick={() => router.push("/appointments")}
-              className="flex-col h-auto py-4 gap-2"
-            >
-              <Calendar size={20} className="text-primary" />
-              <span className="text-xs">Mis citas</span>
-            </Button>
-          </>
+
+        {/* Gestionar cola — solo barberos/admin */}
+        {isAuthenticated && (user?.role === "BARBER" || user?.role === "ADMIN") && (
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={() => router.push("/barber-queue")}
+            className="flex-col h-auto py-4 gap-2"
+          >
+            <Scissors size={20} className="text-primary" />
+            <span className="text-xs">Gestionar cola</span>
+          </Button>
+        )}
+
+        {/* Iniciar sesión — solo invitados */}
+        {!isAuthenticated && (
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={() => router.push("/auth/login")}
+            className="flex-col h-auto py-4 gap-2"
+          >
+            <LogIn size={20} className="text-primary" />
+            <span className="text-xs">Iniciar sesión</span>
+          </Button>
         )}
       </div>
 

@@ -75,8 +75,16 @@ export const adminApi = {
     search?: string;
     includeInactive?: boolean;
   }): Promise<{ data: BarbershopAdmin[]; total: number }> => {
-    const { data } = await api.get("/barbershops", { params });
-    return data.data ?? data;
+    const { data } = await api.get("/admin/barbershops", { params });
+    // Handle { data: { data: [], total: N } } and { data: [], total: N }
+    const inner = data?.data;
+    if (inner && !Array.isArray(inner) && Array.isArray(inner.data)) {
+      return inner; // { data: [], total: N }
+    }
+    if (Array.isArray(inner)) {
+      return { data: inner, total: data.total ?? inner.length };
+    }
+    return data;
   },
 
   createBarbershop: async (payload: Record<string, unknown>): Promise<BarbershopAdmin> => {

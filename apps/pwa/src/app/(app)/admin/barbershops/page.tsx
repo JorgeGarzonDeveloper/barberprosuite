@@ -358,8 +358,8 @@ export default function AdminBarbershopsPage() {
                 )}
                 <div className="flex items-center gap-1.5 text-xs mb-1">
                   <Star size={11} className="text-primary" />
-                  <span className="text-primary font-semibold">{b.rating.toFixed(1)}</span>
-                  <span className="text-text-tertiary">({b.totalReviews} reseñas)</span>
+                  <span className="text-primary font-semibold">{(b.rating ?? 0).toFixed(1)}</span>
+                  <span className="text-text-tertiary">({b.totalReviews ?? 0} reseñas)</span>
                   {b.images && b.images.length > 0 && (
                     <span className="text-text-tertiary ml-2">· {b.images.length} foto(s)</span>
                   )}
