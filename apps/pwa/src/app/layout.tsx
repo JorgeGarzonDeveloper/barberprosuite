@@ -12,16 +12,9 @@ export const metadata: Metadata = {
     title: "BarberPro",
   },
   icons: {
-    icon: [
-      { url: "/favicon.ico", type: "image/x-icon" },
-      { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
-    ],
-    apple: [
-      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
-    ],
-    shortcut: "/favicon.ico",
+    icon: "/logo.png",
+    apple: "/logo.png",
+    shortcut: "/logo.png",
   },
   openGraph: {
     title: "BarberProSuite",
@@ -47,14 +40,13 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
-        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/logo.png" />
+        <link rel="icon" type="image/png" href="/logo.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="msapplication-TileColor" content="#c9a227" />
-        <meta name="msapplication-TileImage" content="/icons/icon-192.png" />
+        <meta name="msapplication-TileImage" content="/logo.png" />
       </head>
       <body>
         <Providers>{children}</Providers>
