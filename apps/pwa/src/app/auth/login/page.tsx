@@ -60,7 +60,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex justify-center mb-10">
-          <Logo variant="full" size="lg" />
+          <Logo variant="full" size="lg" tagline="Tu turno, sin esperas" />
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">

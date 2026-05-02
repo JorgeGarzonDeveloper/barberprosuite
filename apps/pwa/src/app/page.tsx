@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth.store";
 import Spinner from "@/components/ui/Spinner";
+import Logo from "@/components/ui/Logo";
 
 export default function RootPage() {
   const router = useRouter();
@@ -21,8 +22,8 @@ export default function RootPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
-      <div className="flex flex-col items-center gap-4">
-        <div className="text-3xl font-bold text-gold-gradient">BarberPro</div>
+      <div className="flex flex-col items-center gap-6">
+        <Logo variant="full" size="lg" />
         <Spinner size="md" />
       </div>
     </div>
