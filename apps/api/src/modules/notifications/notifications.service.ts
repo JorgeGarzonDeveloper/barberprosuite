@@ -58,10 +58,15 @@ export class NotificationsService implements OnModuleInit {
     const vapidPrivate = this.config.get<string>("VAPID_PRIVATE_KEY");
     const vapidEmail = this.config.get<string>("VAPID_EMAIL");
 
-    if (vapidPublic && vapidPrivate && vapidEmail) {
-      webPush.setVapidDetails(vapidEmail, vapidPublic, vapidPrivate);
-      this.vapidConfigured = true;
-      this.logger.log("Web Push (VAPID) initialized");
+    if (vapidPublic && vapidPrivate && vapidEmail &&
+        vapidPublic !== "undefined" && vapidPrivate !== "undefined") {
+      try {
+        webPush.setVapidDetails(vapidEmail, vapidPublic, vapidPrivate);
+        this.vapidConfigured = true;
+        this.logger.log("Web Push (VAPID) initialized");
+      } catch (err) {
+        this.logger.error(`VAPID initialization failed: ${err.message} — web push disabled`);
+      }
     } else {
       this.logger.warn("VAPID keys not configured — web push disabled");
     }
