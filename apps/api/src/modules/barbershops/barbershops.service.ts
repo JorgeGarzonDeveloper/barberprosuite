@@ -115,31 +115,56 @@ export class BarbershopsService {
     return shop;
   }
 
-  async canClientReview(barbershopId: string, clientId: string): Promise<{ canReview: boolean; appointmentId?: string }> {
-    // Buscar cita COMPLETADA del cliente en esta barbería sin reseña
+  async canClientReview(barbershopId: string, clientId: string): Promise<{ canReview: boolean; appointmentId?: string; queueEntryId?: string }> {
+    const clientProfile = await this.prisma.clientProfile.findUnique({ where: { userId: clientId } });
+    if (!clientProfile) return { canReview: false };
+
+    // 1. Buscar cita COMPLETADA sin reseña
+    const reviewedAppointmentIds = (
+      await this.prisma.review.findMany({
+        where: { barbershopId, appointmentId: { not: null } },
+        select: { appointmentId: true },
+      })
+    ).map((r) => r.appointmentId).filter((id): id is string => id !== null);
+
     const appointment = await this.prisma.appointment.findFirst({
       where: {
         barbershopId,
         client: { userId: clientId },
         status: "COMPLETED",
-        // No debe existir reseña para esta cita
-        id: {
-          notIn: (
-            await this.prisma.review.findMany({
-              where: { barbershopId, appointmentId: { not: null } },
-              select: { appointmentId: true },
-            })
-          )
-            .map((r) => r.appointmentId)
-            .filter((id): id is string => id !== null),
-        },
+        id: { notIn: reviewedAppointmentIds },
       },
       orderBy: { completedAt: "desc" },
       include: { barber: true },
     });
 
-    if (!appointment) return { canReview: false };
-    return { canReview: true, appointmentId: appointment.id, barberId: appointment.barberId } as any;
+    if (appointment) {
+      return { canReview: true, appointmentId: appointment.id, barberId: appointment.barberId } as any;
+    }
+
+    // 2. Buscar entrada de cola COMPLETADA sin reseña
+    const reviewedQueueEntryIds = (
+      await this.prisma.review.findMany({
+        where: { barbershopId, queueEntryId: { not: null } },
+        select: { queueEntryId: true },
+      })
+    ).map((r) => r.queueEntryId).filter((id): id is string => id !== null);
+
+    const queueEntry = await this.prisma.queueEntry.findFirst({
+      where: {
+        barbershopId,
+        client: { userId: clientId },
+        status: "COMPLETED",
+        id: { notIn: reviewedQueueEntryIds },
+      },
+      orderBy: { servedAt: "desc" },
+    });
+
+    if (queueEntry) {
+      return { canReview: true, queueEntryId: queueEntry.id, barberId: queueEntry.barberId } as any;
+    }
+
+    return { canReview: false };
   }
 
   async create(ownerId: string, dto: CreateBarbershopDto) {
@@ -218,7 +243,8 @@ export class BarbershopsService {
     userId: string,
     rating: number,
     comment?: string,
-    appointmentId?: string
+    appointmentId?: string,
+    queueEntryId?: string,
   ) {
     if (rating < 1 || rating > 5) {
       throw new BadRequestException("La calificación debe estar entre 1 y 5");
@@ -231,9 +257,10 @@ export class BarbershopsService {
     if (!clientProfile) throw new BadRequestException("Perfil de cliente no encontrado");
     const clientId = clientProfile.id;
 
-    // Verificar cita completada y obtener barberId
+    // Verificar cita/entrada completada y obtener barberId
     let barberId: string | undefined;
     let resolvedAppointmentId: string | undefined;
+    let resolvedQueueEntryId: string | undefined;
 
     if (appointmentId) {
       const appointment = await this.prisma.appointment.findFirst({
@@ -243,15 +270,24 @@ export class BarbershopsService {
       if (appointment.status !== "COMPLETED") {
         throw new BadRequestException("Solo puedes calificar después de que tu turno haya finalizado");
       }
-      // Verificar que no existe ya una reseña para esta cita
-      const existing = await this.prisma.review.findUnique({
-        where: { appointmentId },
-      });
+      const existing = await this.prisma.review.findUnique({ where: { appointmentId } });
       if (existing) throw new ConflictException("Ya calificaste esta cita");
       barberId = appointment.barberId;
       resolvedAppointmentId = appointmentId;
+    } else if (queueEntryId) {
+      const entry = await this.prisma.queueEntry.findFirst({
+        where: { id: queueEntryId, barbershopId, client: { userId } },
+      });
+      if (!entry) throw new BadRequestException("Entrada de cola no encontrada");
+      if (entry.status !== "COMPLETED") {
+        throw new BadRequestException("Solo puedes calificar después de que tu turno haya finalizado");
+      }
+      const existing = await this.prisma.review.findUnique({ where: { queueEntryId } });
+      if (existing) throw new ConflictException("Ya calificaste esta atención");
+      barberId = entry.barberId ?? undefined;
+      resolvedQueueEntryId = queueEntryId;
     } else {
-      // Buscar la última cita completada sin reseña
+      // Buscar la última cita o entrada de cola completada sin reseña
       const reviewedAppointmentIds = (
         await this.prisma.review.findMany({
           where: { clientId, barbershopId, appointmentId: { not: null } },
@@ -269,12 +305,34 @@ export class BarbershopsService {
         orderBy: { completedAt: "desc" },
       });
 
-      if (!appointment) {
-        throw new BadRequestException("Solo puedes calificar después de ser atendido en esta barbería");
-      }
+      if (appointment) {
+        barberId = appointment.barberId;
+        resolvedAppointmentId = appointment.id;
+      } else {
+        // Intentar con entrada de cola
+        const reviewedQueueEntryIds = (
+          await this.prisma.review.findMany({
+            where: { clientId, barbershopId, queueEntryId: { not: null } },
+            select: { queueEntryId: true },
+          })
+        ).map((r) => r.queueEntryId).filter((id): id is string => id !== null);
 
-      barberId = appointment.barberId;
-      resolvedAppointmentId = appointment.id;
+        const entry = await this.prisma.queueEntry.findFirst({
+          where: {
+            barbershopId,
+            client: { userId },
+            status: "COMPLETED",
+            id: { notIn: reviewedQueueEntryIds },
+          },
+          orderBy: { servedAt: "desc" },
+        });
+
+        if (!entry) {
+          throw new BadRequestException("Solo puedes calificar después de ser atendido en esta barbería");
+        }
+        barberId = entry.barberId ?? undefined;
+        resolvedQueueEntryId = entry.id;
+      }
     }
 
     const review = await this.prisma.review.create({
@@ -283,6 +341,7 @@ export class BarbershopsService {
         clientId,
         barberId: barberId || undefined,
         appointmentId: resolvedAppointmentId,
+        queueEntryId: resolvedQueueEntryId,
         rating,
         comment,
       },

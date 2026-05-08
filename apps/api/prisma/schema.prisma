@@ -171,6 +171,7 @@ model Review {
   barberId       String?
   clientId       String
   appointmentId  String?  @unique
+  queueEntryId   String?  @unique
   rating         Int
   comment        String?
   createdAt      DateTime @default(now())
@@ -178,6 +179,7 @@ model Review {
   barbershop  Barbershop     @relation(fields: [barbershopId], references: [id])
   client      ClientProfile  @relation(fields: [clientId], references: [id])
   barber      BarberProfile? @relation("BarberReviews", fields: [barberId], references: [id])
+  queueEntry  QueueEntry?    @relation("QueueEntryReview", fields: [queueEntryId], references: [id])
 
   @@map("reviews")
 }
@@ -242,6 +244,7 @@ model QueueEntry {
   barbershop Barbershop    @relation(fields: [barbershopId], references: [id])
   client     ClientProfile @relation("ClientQueue", fields: [clientId], references: [id])
   barber     BarberProfile? @relation("BarberQueue", fields: [barberId], references: [id])
+  review     Review?       @relation("QueueEntryReview")
 
   @@map("queue_entries")
 }

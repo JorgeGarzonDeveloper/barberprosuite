@@ -401,6 +401,11 @@ export class QueueService {
         status: QueueStatus.COMPLETED,
         servedAt: new Date(),
       },
+      include: {
+        client: { include: { user: { select: { id: true, fcmToken: true, firstName: true } } } },
+        barbershop: { select: { name: true } },
+        barber: { include: { user: { select: { firstName: true, lastName: true } } } },
+      },
     });
 
     // Cancelar job de geofence
@@ -411,6 +416,27 @@ export class QueueService {
     }
 
     await this.updateQueuePositions(barbershopId);
+
+    // Notificar al cliente que su servicio terminó
+    const clientUser = entry.client?.user;
+    if (clientUser) {
+      const barberName = entry.barber
+        ? `${entry.barber.user.firstName} ${entry.barber.user.lastName}`
+        : "tu barbero";
+      await this.notifications.notify(
+        clientUser.id,
+        "SERVICE_COMPLETED",
+        "¡Tu corte está listo! ✂️",
+        `${entry.barbershop.name} terminó tu atención. ¿Cómo te fue con ${barberName}?`,
+        {
+          type: "SERVICE_COMPLETED",
+          barbershopId,
+          queueEntryId: entryId,
+        },
+        clientUser.fcmToken ?? undefined,
+      );
+    }
+
     return entry;
   }
 

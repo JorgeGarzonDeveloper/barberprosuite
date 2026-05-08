@@ -123,15 +123,16 @@ export class BarbershopsController {
   @Post(":id/reviews")
   @UseGuards(AuthGuard("jwt"))
   @ApiBearerAuth()
-  @ApiOperation({ summary: "Agregar reseña (solo tras cita COMPLETED)" })
+  @ApiOperation({ summary: "Agregar reseña (tras cita o cola completada)" })
   addReview(
     @Param("id") id: string,
     @CurrentUser("id") userId: string,
     @Body("rating") rating: number,
     @Body("comment") comment?: string,
-    @Body("appointmentId") appointmentId?: string
+    @Body("appointmentId") appointmentId?: string,
+    @Body("queueEntryId") queueEntryId?: string,
   ) {
-    return this.barbershopsService.addReview(id, userId, rating, comment, appointmentId);
+    return this.barbershopsService.addReview(id, userId, rating, comment, appointmentId, queueEntryId);
   }
 
   @Post(":id/images")
