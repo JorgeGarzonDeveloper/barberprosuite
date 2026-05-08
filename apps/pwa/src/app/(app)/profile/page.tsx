@@ -51,7 +51,7 @@ export default function ProfilePage() {
     ["PENDING", "CONFIRMED"].includes(a.status)
   ).length;
 
-  const subscription = subscriptionData?.data;
+  const subscription = subscriptionData;
   const hasActiveSubscription = subscription?.status === "ACTIVE";
 
   const handleLogout = async () => {

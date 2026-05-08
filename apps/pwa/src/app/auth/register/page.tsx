@@ -67,7 +67,7 @@ export default function RegisterPage() {
     enabled: step === 2,
   });
 
-  const plans = plansData?.data || [];
+  const plans = plansData || [];
 
   const onStep1Submit = async (data: FormData) => {
     setError("");

@@ -37,8 +37,8 @@ export default function SubscriptionPage() {
     queryFn: () => subscriptionsApi.getPlans(),
   });
 
-  const subscription = subData?.data;
-  const plans = (plansData?.data ?? []).filter((p: Plan) => p.priceMonthly > 0);
+  const subscription = subData;
+  const plans = (plansData ?? []).filter((p: Plan) => p.priceMonthly > 0);
 
   const isActive = subscription?.status === "ACTIVE";
   const needsPayment = !subscription || subscription.status === "PENDING_PAYMENT";

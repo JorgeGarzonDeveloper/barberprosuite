@@ -84,7 +84,7 @@ export default function HomePage() {
 
   const hasPendingSubscription =
     user?.role === "BARBER" && subscriptionData !== undefined &&
-    (subscriptionData === null || subscriptionData?.data?.status !== "ACTIVE");
+    (subscriptionData === null || subscriptionData?.status !== "ACTIVE");
 
   return (
     <div className="page-container">

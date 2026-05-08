@@ -2,12 +2,12 @@ import api from "../api";
 import { Plan, Subscription } from "@/types";
 
 export const subscriptionsApi = {
-  getMy: async (): Promise<{ data: Subscription }> => {
+  getMy: async (): Promise<Subscription | null> => {
     const { data } = await api.get("/subscriptions/my");
     return data;
   },
 
-  getPlans: async (): Promise<{ data: Plan[] }> => {
+  getPlans: async (): Promise<Plan[]> => {
     const { data } = await api.get("/subscriptions/plans");
     return data;
   },
