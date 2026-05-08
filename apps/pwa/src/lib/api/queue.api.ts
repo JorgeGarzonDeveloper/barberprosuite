@@ -31,7 +31,7 @@ export const queueApi = {
   },
 
   callNext: async (): Promise<void> => {
-    await api.patch("/queue/call-next-mine");
+    await api.post("/queue/call-next-mine");
   },
 
   completeCurrent: async (): Promise<void> => {
