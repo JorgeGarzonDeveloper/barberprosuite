@@ -247,16 +247,20 @@ export class QueueService {
       },
     });
 
-    // Programar verificación de geofence
-    await this.queueBull.add(
-      "check-geofence",
-      { entryId: entry.id, barbershopId: dto.barbershopId },
-      {
-        delay: LOCATION_CHECK_INTERVAL_SECONDS * 1000,
-        repeat: { every: LOCATION_CHECK_INTERVAL_SECONDS * 1000 },
-        jobId: `geofence-${entry.id}`,
-      }
-    );
+    // Programar verificación de geofence (no crítico: si Redis falla, el join igualmente se completa)
+    try {
+      await this.queueBull.add(
+        "check-geofence",
+        { entryId: entry.id, barbershopId: dto.barbershopId },
+        {
+          delay: LOCATION_CHECK_INTERVAL_SECONDS * 1000,
+          repeat: { every: LOCATION_CHECK_INTERVAL_SECONDS * 1000 },
+          jobId: `geofence-${entry.id}`,
+        }
+      );
+    } catch (err) {
+      this.logger.warn(`No se pudo programar geofence para entry ${entry.id}: ${err?.message}`);
+    }
 
     const clientUser = entry.client.user;
 
