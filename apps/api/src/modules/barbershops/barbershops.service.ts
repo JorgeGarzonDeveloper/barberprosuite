@@ -394,6 +394,13 @@ export class BarbershopsService {
     });
     if (!shop) throw new NotFoundException("Barbería no encontrada");
 
+    const MAX_IMAGES = 5;
+    if (shop.images.length + files.length > MAX_IMAGES) {
+      throw new BadRequestException(
+        `Solo se permiten máximo ${MAX_IMAGES} imágenes. Ya tienes ${shop.images.length} imagen(es).`
+      );
+    }
+
     const imageUrls: string[] = [];
     for (const file of files) {
       // Comprimir con sharp

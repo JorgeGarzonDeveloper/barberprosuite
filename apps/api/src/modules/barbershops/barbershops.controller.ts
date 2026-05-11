@@ -141,7 +141,7 @@ export class BarbershopsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: "Subir imágenes al carrusel de la barbería (multipart/form-data, campo 'images')" })
   @UseInterceptors(
-    FilesInterceptor("images", 10, {
+    FilesInterceptor("images", 5, {
       storage: memoryStorage(),
       fileFilter: (req, file, cb) => {
         if (!file.mimetype.match(/^image\//)) {
