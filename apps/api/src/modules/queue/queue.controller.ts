@@ -27,7 +27,7 @@ export class QueueController {
   constructor(private queueService: QueueService) {}
 
   @Get("my-entry")
-  @Roles("CLIENT")
+  @Roles("CLIENT", "BARBER")
   @ApiOperation({ summary: "Obtener la entrada activa del cliente en cualquier fila" })
   getMyEntry(@CurrentUser("id") userId: string) {
     return this.queueService.getMyEntry(userId);
@@ -67,7 +67,7 @@ export class QueueController {
   }
 
   @Post("join")
-  @Roles("CLIENT")
+  @Roles("CLIENT", "BARBER")
   @ApiOperation({ summary: "Unirse a la fila virtual (via QR scan)" })
   joinQueue(
     @CurrentUser("id") clientId: string,
@@ -77,7 +77,7 @@ export class QueueController {
   }
 
   @Patch("location")
-  @Roles("CLIENT")
+  @Roles("CLIENT", "BARBER")
   @ApiOperation({ summary: "Actualizar ubicación del cliente en la fila" })
   updateLocation(
     @CurrentUser("id") clientId: string,
@@ -108,7 +108,7 @@ export class QueueController {
   }
 
   @Delete("leave/:entryId")
-  @Roles("CLIENT")
+  @Roles("CLIENT", "BARBER")
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: "Abandonar la fila" })
   leaveQueue(
