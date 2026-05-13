@@ -49,11 +49,13 @@ import { BarberModule } from "./modules/barber/barber.module";
       useFactory: (config: ConfigService) => {
         const redisUrl = config.get<string>("REDIS_URL");
         const redisConfig = redisUrl
-          ? { url: redisUrl }
+          ? { url: redisUrl, maxRetriesPerRequest: 1, enableReadyCheck: false }
           : {
               host: config.get("REDIS_HOST") || "localhost",
               port: config.get<number>("REDIS_PORT") || 6379,
               password: config.get("REDIS_PASSWORD") || undefined,
+              maxRetriesPerRequest: 1,
+              enableReadyCheck: false,
             };
         return {
           redis: redisConfig,
