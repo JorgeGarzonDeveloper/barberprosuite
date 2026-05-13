@@ -50,7 +50,7 @@ export default function ScanPage() {
     onSuccess: (data) => {
       setSuccess(true);
       setShowBarberModal(false);
-      setTimeout(() => router.push(`/queue/${data.entry.id}`), 1500);
+      setTimeout(() => router.push(`/queue/${data.id}`), 1500);
     },
     onError: (err: unknown) => {
       const msg =

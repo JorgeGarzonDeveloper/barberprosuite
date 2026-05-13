@@ -38,7 +38,7 @@ function PaymentSuccessContent() {
     async function check() {
       try {
         const res = await api.get("/subscriptions/my");
-        const sub = res.data?.data;
+        const sub = res.data;
         setSubStatus(sub?.status ?? "PENDING_PAYMENT");
       } catch {
         setSubStatus("PENDING_PAYMENT");
@@ -65,7 +65,7 @@ function PaymentSuccessContent() {
     setCheckingManually(true);
     try {
       const res = await api.get("/subscriptions/my");
-      setSubStatus(res.data?.data?.status ?? "PENDING_PAYMENT");
+      setSubStatus(res.data?.status ?? "PENDING_PAYMENT");
     } catch {
       // ignore
     } finally {

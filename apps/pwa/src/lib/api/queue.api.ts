@@ -10,7 +10,7 @@ export interface JoinQueuePayload {
 }
 
 export const queueApi = {
-  join: async (payload: JoinQueuePayload): Promise<{ entry: QueueEntry }> => {
+  join: async (payload: JoinQueuePayload): Promise<QueueEntry> => {
     const { data } = await api.post("/queue/join", payload);
     return data;
   },
@@ -27,7 +27,8 @@ export const queueApi = {
 
   getBarbers: async (barbershopId: string): Promise<{ data: Barber[] }> => {
     const { data } = await api.get(`/queue/barbers/${barbershopId}`);
-    return data;
+    const list = Array.isArray(data) ? data : (data?.data ?? []);
+    return { data: list };
   },
 
   callNext: async (): Promise<void> => {

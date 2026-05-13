@@ -12,14 +12,16 @@ export const appointmentsApi = {
     params?: AppointmentsParams
   ): Promise<PaginatedResponse<Appointment>> => {
     const { data } = await api.get("/appointments/my", { params });
-    return data;
+    const list = Array.isArray(data) ? data : (data?.data ?? []);
+    return { data: list, total: list.length };
   },
 
   getBarber: async (
     params?: AppointmentsParams
   ): Promise<PaginatedResponse<Appointment>> => {
     const { data } = await api.get("/appointments/barber", { params });
-    return data;
+    const list = Array.isArray(data) ? data : (data?.data ?? []);
+    return { data: list, total: list.length };
   },
 
   cancel: async (id: string): Promise<void> => {

@@ -13,12 +13,14 @@ export const barberApi = {
     barberId: string
   ): Promise<{ data: BarberService[] }> => {
     const { data } = await api.get(`/barber/services/by-barber/${barberId}`);
-    return data;
+    const list = Array.isArray(data) ? data : (data?.data ?? []);
+    return { data: list };
   },
 
   getMyServices: async (): Promise<{ data: BarberService[] }> => {
     const { data } = await api.get("/barber/services");
-    return data;
+    const list = Array.isArray(data) ? data : (data?.data ?? []);
+    return { data: list };
   },
 
   createService: async (
