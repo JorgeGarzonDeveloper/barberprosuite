@@ -7,3 +7,5 @@ out
 *.env
 .env.local
 .env.production
+.vercel
+.env*.local

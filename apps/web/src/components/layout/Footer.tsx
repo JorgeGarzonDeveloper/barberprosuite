@@ -50,11 +50,15 @@ export function Footer() {
               Empresa
             </h4>
             <ul className="space-y-3">
-              {["Acerca de", "Blog", "Soporte", "Contacto", "Términos", "Privacidad"].map((item) => (
-                <li key={item}>
-                  <a href="#" className="text-white/40 hover:text-gold-400 text-sm transition-colors">
-                    {item}
-                  </a>
+              {[
+                { label: "Soporte", href: "/soporte" },
+                { label: "Términos y Condiciones", href: "/terminos" },
+                { label: "Política de Privacidad", href: "/privacidad" },
+              ].map((item) => (
+                <li key={item.label}>
+                  <Link href={item.href} className="text-white/40 hover:text-gold-400 text-sm transition-colors">
+                    {item.label}
+                  </Link>
                 </li>
               ))}
             </ul>

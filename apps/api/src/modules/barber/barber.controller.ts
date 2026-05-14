@@ -110,6 +110,29 @@ export class BarberController {
     return this.barberService.deleteService(userId, serviceId);
   }
 
+  // ─── Horario ─────────────────────────────────────────────────────
+
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @Roles("BARBER", "ADMIN")
+  @Get("schedule")
+  @ApiOperation({ summary: "Obtener mi horario de trabajo" })
+  getSchedule(@CurrentUser("id") userId: string) {
+    return this.barberService.getSchedule(userId);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @Roles("BARBER", "ADMIN")
+  @Patch("schedule")
+  @ApiOperation({ summary: "Actualizar mi horario de trabajo" })
+  updateSchedule(
+    @CurrentUser("id") userId: string,
+    @Body() schedule: Record<string, { enabled: boolean; start: string; end: string }>
+  ) {
+    return this.barberService.updateSchedule(userId, schedule);
+  }
+
   // ─── Citas ──────────────────────────────────────────────────────
 
   @ApiBearerAuth()

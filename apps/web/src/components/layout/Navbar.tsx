@@ -27,11 +27,11 @@ export function Navbar() {
         : "bg-transparent"
     }`}>
       <div className="container mx-auto px-6">
-        <div className="flex items-center justify-between h-28">
+        <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <a href="/" className="flex items-center group">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png?v=3" alt="BarberProSuite" className="h-24 w-auto" />
+            <img src="/logo.png?v=3" alt="BarberProSuite" className="h-14 w-auto object-contain" />
           </a>
 
           {/* Desktop nav */}

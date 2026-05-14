@@ -148,6 +148,44 @@ export class BarberService {
     });
   }
 
+  // ─── Horario de trabajo ────────────────────────────────────────
+
+  async getSchedule(userId: string) {
+    const profile = await this.prisma.barberProfile.findUnique({
+      where: { userId },
+      select: { workingHours: true },
+    });
+    if (!profile) throw new NotFoundException("Perfil de barbero no encontrado");
+
+    const defaults = {
+      monday:    { enabled: true,  start: "09:00", end: "18:00" },
+      tuesday:   { enabled: true,  start: "09:00", end: "18:00" },
+      wednesday: { enabled: true,  start: "09:00", end: "18:00" },
+      thursday:  { enabled: true,  start: "09:00", end: "18:00" },
+      friday:    { enabled: true,  start: "09:00", end: "18:00" },
+      saturday:  { enabled: true,  start: "09:00", end: "15:00" },
+      sunday:    { enabled: false, start: "09:00", end: "15:00" },
+    };
+
+    const stored = profile.workingHours as any;
+    if (stored && typeof stored === "object" && !Array.isArray(stored) && Object.keys(stored).length > 0) {
+      return stored;
+    }
+    return defaults;
+  }
+
+  async updateSchedule(userId: string, schedule: Record<string, { enabled: boolean; start: string; end: string }>) {
+    const profile = await this.prisma.barberProfile.findUnique({ where: { userId } });
+    if (!profile) throw new NotFoundException("Perfil de barbero no encontrado");
+
+    await this.prisma.barberProfile.update({
+      where: { userId },
+      data: { workingHours: schedule },
+    });
+
+    return schedule;
+  }
+
   // ─── Estadísticas básicas ─────────────────────────────────────
 
   async getMyStats(userId: string) {

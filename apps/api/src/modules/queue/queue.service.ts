@@ -412,11 +412,15 @@ export class QueueService {
       },
     });
 
-    // Cancelar job de geofence
-    const jobs = await this.queueBull.getRepeatableJobs();
-    const job = jobs.find((j) => j.id === `geofence-${entryId}`);
-    if (job) {
-      await this.queueBull.removeRepeatableByKey(job.key);
+    // Cancelar job de geofence (tolerante a fallos de Redis)
+    try {
+      const jobs = await this.queueBull.getRepeatableJobs();
+      const job = jobs.find((j) => j.id === `geofence-${entryId}`);
+      if (job) {
+        await this.queueBull.removeRepeatableByKey(job.key);
+      }
+    } catch (err) {
+      this.logger.warn(`No se pudo cancelar job de geofence para entry ${entryId}: ${err?.message}`);
     }
 
     await this.updateQueuePositions(barbershopId);

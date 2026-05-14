@@ -77,6 +77,27 @@
   }
 }
 
+  /* Estilos para páginas legales */
+  .prose-legal {
+    @apply text-white/70 leading-relaxed;
+  }
+  .prose-legal p {
+    @apply mb-4 text-sm leading-relaxed;
+  }
+  .prose-legal h2 {
+    @apply text-white font-bold text-lg mt-8 mb-3;
+  }
+  .prose-legal ul {
+    @apply list-disc list-inside space-y-2 mb-4 text-sm;
+  }
+  .prose-legal ul li {
+    @apply text-white/70;
+  }
+  .prose-legal strong {
+    @apply text-white/90 font-semibold;
+  }
+}
+
 /* Scrollbar personalizado */
 ::-webkit-scrollbar {
   width: 5px;
