@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "@/lib/admin-api";
-import { CheckCircle, XCircle, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import { CheckCircle, XCircle, ChevronDown, ChevronUp, ExternalLink, FileSpreadsheet } from "lucide-react";
+import { exportRefundsExcel } from "@/lib/excel-export";
 
 const STATUS_COLORS: Record<string, string> = {
   OPEN: "#f59e0b",
@@ -60,9 +61,19 @@ export default function RefundsPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white">Devoluciones</h1>
-        <p className="text-white/40 text-sm mt-1">{total} solicitud{total !== 1 ? "es" : ""} encontrada{total !== 1 ? "s" : ""}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Devoluciones</h1>
+          <p className="text-white/40 text-sm mt-1">{total} solicitud{total !== 1 ? "es" : ""} encontrada{total !== 1 ? "s" : ""}</p>
+        </div>
+        <button
+          onClick={() => tickets.length && exportRefundsExcel(tickets)}
+          disabled={!tickets.length}
+          className="flex items-center gap-2 px-4 py-2 bg-[#c9a227]/15 border border-[#c9a227]/30 text-[#c9a227] rounded-xl text-sm font-semibold hover:bg-[#c9a227]/25 transition-all disabled:opacity-40 self-start sm:self-auto"
+        >
+          <FileSpreadsheet size={15} />
+          Exportar Excel
+        </button>
       </div>
 
       {/* Filters */}

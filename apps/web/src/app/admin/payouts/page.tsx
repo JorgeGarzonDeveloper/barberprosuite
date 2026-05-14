@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { adminApi } from "@/lib/admin-api";
-import { ChevronDown, ChevronUp, Download } from "lucide-react";
+import { ChevronDown, ChevronUp, FileSpreadsheet, Download } from "lucide-react";
+import { exportPayoutsExcel, exportTransactionsExcel } from "@/lib/excel-export";
 
 function fmtCOP(n: number) {
   return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
@@ -23,38 +24,21 @@ export default function PayoutsPage() {
 
   const totalPending = (payouts ?? []).reduce((s, b) => s + b.totalOwed, 0);
 
+  const [exportingTx, setExportingTx] = useState(false);
+
   const handleExportBarbers = () => {
     if (!payouts || payouts.length === 0) return;
-    const rows = [
-      ["Barbero", "Barbería", "Email", "Teléfono", "Total a pagar (COP)"].join(","),
-      ...payouts.map((b) =>
-        [`"${b.firstName} ${b.lastName}"`, `"${b.barbershopName}"`, b.email, b.phone, b.totalOwed.toFixed(0)].join(",")
-      ),
-    ];
-    downloadCSV(rows.join("\n"), "cuadre_barberos.csv");
+    exportPayoutsExcel(payouts);
   };
 
   const handleExportAllTransactions = async () => {
+    setExportingTx(true);
     try {
       const txs = await adminApi.getTransactionsExport();
-      if (!txs.length) return;
-      const headers = Object.keys(txs[0]);
-      const rows = [
-        headers.join(","),
-        ...txs.map((t: any) => headers.map((h) => `"${String(t[h] ?? "").replace(/"/g, "'")}"`).join(",")),
-      ];
-      downloadCSV(rows.join("\n"), "transacciones_barberprosuite.csv");
-    } catch { /* ok */ }
-  };
-
-  const downloadCSV = (content: string, filename: string) => {
-    const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
+      if (txs.length) exportTransactionsExcel(txs);
+    } catch { /* ok */ } finally {
+      setExportingTx(false);
+    }
   };
 
   return (
@@ -67,17 +51,19 @@ export default function PayoutsPage() {
         <div className="flex gap-2">
           <button
             onClick={handleExportBarbers}
-            className="flex items-center gap-2 px-4 py-2 bg-[#c9a227]/15 border border-[#c9a227]/30 text-[#c9a227] rounded-xl text-sm font-semibold hover:bg-[#c9a227]/25 transition-all"
+            disabled={!payouts?.length}
+            className="flex items-center gap-2 px-4 py-2 bg-[#c9a227]/15 border border-[#c9a227]/30 text-[#c9a227] rounded-xl text-sm font-semibold hover:bg-[#c9a227]/25 transition-all disabled:opacity-40"
           >
-            <Download size={15} />
-            Cuadre CSV
+            <FileSpreadsheet size={15} />
+            Cuadre Excel
           </button>
           <button
             onClick={handleExportAllTransactions}
-            className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white/60 rounded-xl text-sm font-semibold hover:text-white hover:bg-white/10 transition-all"
+            disabled={exportingTx}
+            className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white/60 rounded-xl text-sm font-semibold hover:text-white hover:bg-white/10 transition-all disabled:opacity-40"
           >
             <Download size={15} />
-            Export completo
+            {exportingTx ? "Generando..." : "Todas las transacciones (.xlsx)"}
           </button>
         </div>
       </div>

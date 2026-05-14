@@ -2,7 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { adminApi } from "@/lib/admin-api";
-import { TrendingUp, TrendingDown, DollarSign, CreditCard, Scissors, AlertTriangle, CheckCircle, Info } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, CreditCard, Scissors, AlertTriangle, CheckCircle, Info, FileSpreadsheet } from "lucide-react";
+import { exportAnalyticsExcel } from "@/lib/excel-export";
 
 function fmtCOP(n: number) {
   return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
@@ -43,9 +44,19 @@ export default function AnalyticsPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">Analíticas financieras</h1>
-        <p className="text-white/40 text-sm mt-1">Estado de resultados, desglose de ingresos y crecimiento</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Analíticas financieras</h1>
+          <p className="text-white/40 text-sm mt-1">Estado de resultados, desglose de ingresos y crecimiento</p>
+        </div>
+        <button
+          onClick={() => bd && exportAnalyticsExcel(bd, months)}
+          disabled={!bd}
+          className="flex items-center gap-2 px-4 py-2 bg-[#c9a227]/15 border border-[#c9a227]/30 text-[#c9a227] rounded-xl text-sm font-semibold hover:bg-[#c9a227]/25 transition-all disabled:opacity-40 self-start sm:self-auto"
+        >
+          <FileSpreadsheet size={15} />
+          Exportar Excel
+        </button>
       </div>
 
       {/* ── ESTADO DE RESULTADOS ────────────────────────────────────────────── */}
