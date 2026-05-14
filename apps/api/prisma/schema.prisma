@@ -397,9 +397,10 @@ model SupportTicket {
   message   String
   status    SupportTicketStatus @default(OPEN)
   priority  SupportPriority     @default(NORMAL)
-  source    String              @default("web")  // "web" | "mobile"
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
+  source        String              @default("web")  // "web" | "mobile"
+  attachmentUrl String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 
   user    User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
   replies SupportReply[]

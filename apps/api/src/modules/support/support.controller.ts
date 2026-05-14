@@ -9,9 +9,12 @@ import {
   UseGuards,
   Request,
   Optional,
+  UseInterceptors,
+  UploadedFile,
 } from "@nestjs/common";
 import { ApiTags, ApiBearerAuth, ApiOperation } from "@nestjs/swagger";
 import { AuthGuard } from "@nestjs/passport";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { SupportService } from "./support.service";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { RolesGuard } from "../../common/guards/roles.guard";
@@ -20,6 +23,19 @@ import { RolesGuard } from "../../common/guards/roles.guard";
 @Controller("support")
 export class SupportController {
   constructor(private supportService: SupportService) {}
+
+  /**
+   * POST /support/upload-attachment
+   * Sube un comprobante de pago para adjuntar a una solicitud de devolución.
+   */
+  @Post("upload-attachment")
+  @UseInterceptors(FileInterceptor("file", { limits: { fileSize: 5 * 1024 * 1024 } }))
+  @ApiOperation({ summary: "Subir comprobante de pago para devolución" })
+  async uploadAttachment(@UploadedFile() file: Express.Multer.File) {
+    if (!file) return { url: null };
+    const url = await this.supportService.uploadAttachment(file);
+    return { url };
+  }
 
   /**
    * POST /support/tickets
@@ -36,6 +52,7 @@ export class SupportController {
       email?: string;
       source?: string;
       priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT";
+      attachmentUrl?: string;
     },
     @Request() req: any
   ) {
@@ -49,6 +66,7 @@ export class SupportController {
       message: body.message,
       source: body.source ?? "web",
       priority: body.priority,
+      attachmentUrl: body.attachmentUrl,
     });
   }
 

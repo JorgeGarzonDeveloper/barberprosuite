@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { ChevronDown, ChevronUp, MessageCircle, RotateCcw, Headphones } from "lucide-react";
+import { ChevronDown, ChevronUp, MessageCircle, RotateCcw, Headphones, Upload, X } from "lucide-react";
 
 const FAQs = [
   {
@@ -17,7 +17,7 @@ const FAQs = [
   },
   {
     q: "¿Cómo cancelo una cita y pido devolución?",
-    a: "Puedes cancelar con más de 2 horas de anticipación desde la sección 'Mis citas'. Para solicitar la devolución, ve a Soporte > Devoluciones en la app.",
+    a: "Puedes cancelar con más de 2 horas de anticipación desde la sección 'Mis citas'. Para solicitar la devolución, usa el formulario en esta página o ve a Soporte > Devoluciones en la app.",
   },
   {
     q: "¿Qué se devuelve si cancelo?",
@@ -34,6 +34,10 @@ const FAQs = [
   {
     q: "¿Qué pasa si me alejo de la barbería mientras espero en la cola?",
     a: "Recibirás una notificación de advertencia. Si sigues alejándote más de 500m, serás removido automáticamente de la cola.",
+  },
+  {
+    q: "¿Cómo ejerzo mis derechos sobre mis datos personales?",
+    a: "Conforme a la Ley 1581 de 2012, puedes solicitar conocer, rectificar, actualizar o suprimir tus datos enviando una solicitud de Habeas Data a través de este formulario de soporte.",
   },
 ];
 
@@ -61,21 +65,91 @@ function FAQItem({ q, a }: { q: string; a: string }) {
   );
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
+
 export default function SupportPage() {
   const [refundRef, setRefundRef] = useState("");
   const [refundReason, setRefundReason] = useState("");
   const [refundDetails, setRefundDetails] = useState("");
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+  const [attachmentPreview, setAttachmentPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setError("El archivo no puede superar 5 MB.");
+      return;
+    }
+    setAttachmentFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setAttachmentPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+    setError("");
+  };
+
+  const removeAttachment = () => {
+    setAttachmentFile(null);
+    setAttachmentPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const handleRefundSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!refundRef || !refundReason) return;
     setSubmitting(true);
-    // En producción llama a la API
-    await new Promise((r) => setTimeout(r, 1000));
-    setSubmitting(false);
-    setSubmitted(true);
+    setError("");
+
+    try {
+      let attachmentUrl: string | undefined;
+
+      // Subir comprobante si existe
+      if (attachmentFile) {
+        const formData = new FormData();
+        formData.append("file", attachmentFile);
+        const uploadRes = await fetch(`${API_URL}/api/v1/support/upload-attachment`, {
+          method: "POST",
+          body: formData,
+        });
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          attachmentUrl = uploadData.url;
+        }
+      }
+
+      const res = await fetch(`${API_URL}/api/v1/support/tickets`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject: "Solicitud de devolución",
+          message: `Referencia de pago: ${refundRef}\nMotivo: ${refundReason}\nDetalles: ${refundDetails || "Sin detalles adicionales"}`,
+          source: "web",
+          attachmentUrl,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Error al enviar");
+      setSubmitted(true);
+    } catch {
+      setError("No se pudo enviar la solicitud. Por favor intenta de nuevo.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const resetForm = () => {
+    setSubmitted(false);
+    setRefundRef("");
+    setRefundReason("");
+    setRefundDetails("");
+    setAttachmentFile(null);
+    setAttachmentPreview(null);
+    setError("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
@@ -157,8 +231,9 @@ export default function SupportPage() {
                   <h3 className="text-white font-bold text-lg mb-2">Solicitud enviada</h3>
                   <p className="text-white/50 text-sm mb-6">
                     Revisaremos tu caso en máximo 2 días hábiles y procesaremos la devolución al mismo medio de pago.
+                    Conforme al Estatuto del Consumidor (Ley 1480 de 2011), tienes derecho a reclamar ante la SIC si no obtienes respuesta.
                   </p>
-                  <button onClick={() => setSubmitted(false)} className="btn-primary text-sm">
+                  <button onClick={resetForm} className="btn-primary text-sm">
                     Enviar otra solicitud
                   </button>
                 </div>
@@ -167,6 +242,7 @@ export default function SupportPage() {
                   <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 text-sm text-blue-300">
                     <strong>Política de devoluciones:</strong> Se devuelve el 50% pagado al reservar.
                     La comisión del 10% de la plataforma no es reembolsable. Solo aplica con 2+ horas de anticipación.
+                    Conforme a la Ley 1480 de 2011 (Estatuto del Consumidor).
                   </div>
 
                   <div>
@@ -207,13 +283,61 @@ export default function SupportPage() {
                       Detalles adicionales (opcional)
                     </label>
                     <textarea
-                      rows={4}
+                      rows={3}
                       className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-gold-500/50 text-sm resize-none"
                       placeholder="Describe brevemente el problema..."
                       value={refundDetails}
                       onChange={(e) => setRefundDetails(e.target.value)}
                     />
                   </div>
+
+                  {/* Attachment */}
+                  <div>
+                    <label className="text-white/60 text-sm font-medium mb-2 block">
+                      Comprobante de pago (opcional)
+                    </label>
+                    {attachmentPreview ? (
+                      <div className="relative rounded-xl overflow-hidden border border-white/10">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={attachmentPreview}
+                          alt="Comprobante"
+                          className="w-full max-h-48 object-contain bg-white/5"
+                        />
+                        <button
+                          type="button"
+                          onClick={removeAttachment}
+                          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center hover:bg-red-500/80 transition-colors"
+                        >
+                          <X className="w-4 h-4 text-white" />
+                        </button>
+                        <p className="text-white/40 text-xs text-center py-2">{attachmentFile?.name}</p>
+                      </div>
+                    ) : (
+                      <label
+                        htmlFor="attachment"
+                        className="flex flex-col items-center justify-center gap-2 border border-dashed border-white/20 rounded-xl px-4 py-6 cursor-pointer hover:border-gold-500/40 hover:bg-white/5 transition-all"
+                      >
+                        <Upload className="w-6 h-6 text-white/30" />
+                        <span className="text-white/40 text-sm text-center">
+                          Adjunta foto o captura del comprobante Wompi
+                        </span>
+                        <span className="text-white/20 text-xs">JPG, PNG o PDF · Máx. 5 MB</span>
+                        <input
+                          ref={fileInputRef}
+                          id="attachment"
+                          type="file"
+                          accept="image/*,application/pdf"
+                          className="hidden"
+                          onChange={handleFileChange}
+                        />
+                      </label>
+                    )}
+                  </div>
+
+                  {error && (
+                    <p className="text-red-400 text-sm">{error}</p>
+                  )}
 
                   <button
                     type="submit"
