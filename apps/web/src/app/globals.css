@@ -75,7 +75,6 @@
   .gold-line {
     @apply w-16 h-0.5 bg-gradient-to-r from-gold-500 to-gold-300 mx-auto my-4;
   }
-}
 
   /* Estilos para páginas legales */
   .prose-legal {
