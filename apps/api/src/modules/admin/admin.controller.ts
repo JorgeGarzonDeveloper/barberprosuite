@@ -99,6 +99,44 @@ export class AdminController {
     return this.adminService.assignBarberToBarbershop(userId, barbershopId);
   }
 
+  @Get("revenue/breakdown")
+  @ApiOperation({ summary: "Desglose de ingresos de la plataforma" })
+  getRevenueBreakdown() {
+    return this.adminService.getRevenueBreakdown();
+  }
+
+  @Get("refunds")
+  @ApiOperation({ summary: "Listar solicitudes de devolución" })
+  getRefunds(
+    @Query("page") page = 1,
+    @Query("limit") limit = 20,
+    @Query("status") status?: string
+  ) {
+    return this.adminService.getRefundRequests(+page, +limit, status);
+  }
+
+  @Post("refunds/:id/process")
+  @ApiOperation({ summary: "Aprobar o rechazar solicitud de devolución" })
+  processRefund(
+    @Param("id") ticketId: string,
+    @Body("action") action: "approve" | "reject",
+    @Body("adminNote") adminNote?: string
+  ) {
+    return this.adminService.processRefundRequest(ticketId, action, adminNote);
+  }
+
+  @Get("payouts")
+  @ApiOperation({ summary: "Cuadre de pagos pendientes por barbero" })
+  getPayouts() {
+    return this.adminService.getBarberPayouts();
+  }
+
+  @Get("transactions/export")
+  @ApiOperation({ summary: "Exportar transacciones (CSV)" })
+  exportTransactions() {
+    return this.adminService.getTransactionsExport();
+  }
+
   @Post("notifications/send")
   @ApiOperation({ summary: "Enviar notificación push masiva" })
   async sendNotification(

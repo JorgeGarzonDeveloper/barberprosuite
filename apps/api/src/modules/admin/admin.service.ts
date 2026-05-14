@@ -151,22 +151,215 @@ export class AdminService {
       const date = new Date();
       date.setMonth(date.getMonth() - i);
       const start = new Date(date.getFullYear(), date.getMonth(), 1);
-      const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+      const end = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
 
-      const revenue = await this.prisma.payment.aggregate({
-        where: {
-          status: "APPROVED",
-          createdAt: { gte: start, lte: end },
-        },
-        _sum: { amount: true },
-      });
+      const [allPayments, newUsersCount] = await Promise.all([
+        this.prisma.payment.findMany({
+          where: { status: "APPROVED", createdAt: { gte: start, lte: end } },
+          select: { amount: true, commissionAmount: true, subscriptionId: true, appointmentId: true },
+        }),
+        this.prisma.user.count({
+          where: { createdAt: { gte: start, lte: end } },
+        }),
+      ]);
+
+      const subscriptionRevenue = allPayments
+        .filter((p) => p.subscriptionId)
+        .reduce((s, p) => s + (p.amount || 0), 0);
+
+      const commissionRevenue = allPayments
+        .filter((p) => p.appointmentId)
+        .reduce((s, p) => s + (p.commissionAmount || 0), 0);
 
       months.push({
-        month: start.toLocaleString("es-CO", { month: "long", year: "numeric" }),
-        revenue: revenue._sum.amount || 0,
+        month: start.toLocaleString("es-CO", { month: "short", year: "2-digit" }),
+        revenue: subscriptionRevenue + commissionRevenue,
+        subscriptionRevenue,
+        commissionRevenue,
+        newUsers: newUsersCount,
       });
     }
     return months;
+  }
+
+  async getRevenueBreakdown() {
+    const [subPayments, apptPayments, pendingRefunds, totalAppts] = await Promise.all([
+      this.prisma.payment.aggregate({
+        where: { status: "APPROVED", subscriptionId: { not: null } },
+        _sum: { amount: true },
+        _count: true,
+      }),
+      this.prisma.payment.aggregate({
+        where: { status: "APPROVED", appointmentId: { not: null } },
+        _sum: { amount: true, commissionAmount: true, barberAmount: true },
+        _count: true,
+      }),
+      this.prisma.supportTicket.count({
+        where: {
+          subject: { contains: "devoluci", mode: "insensitive" },
+          status: { in: ["OPEN", "IN_PROGRESS"] },
+        },
+      }),
+      this.prisma.appointment.count({ where: { status: "COMPLETED" } }),
+    ]);
+
+    return {
+      subscriptionRevenue: subPayments._sum.amount || 0,
+      subscriptionCount: subPayments._count,
+      commissionRevenue: apptPayments._sum.commissionAmount || 0,
+      appointmentPaymentsHandled: apptPayments._sum.amount || 0,
+      appointmentCount: apptPayments._count,
+      pendingBarberPayouts: apptPayments._sum.barberAmount || 0,
+      totalPlatformRevenue: (subPayments._sum.amount || 0) + (apptPayments._sum.commissionAmount || 0),
+      pendingRefunds,
+      completedAppointments: totalAppts,
+    };
+  }
+
+  async getRefundRequests(page = 1, limit = 20, status?: string) {
+    const where = {
+      subject: { contains: "devoluci", mode: "insensitive" as any },
+      ...(status ? { status: status as any } : {}),
+    };
+
+    const [tickets, total] = await Promise.all([
+      this.prisma.supportTicket.findMany({
+        where,
+        include: {
+          user: { select: { firstName: true, lastName: true, email: true } },
+          replies: { orderBy: { createdAt: "asc" } },
+        },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.supportTicket.count({ where }),
+    ]);
+
+    return { data: tickets, total, page, limit };
+  }
+
+  async processRefundRequest(ticketId: string, action: "approve" | "reject", adminNote?: string) {
+    const status = action === "approve" ? "RESOLVED" : "CLOSED";
+    const message =
+      action === "approve"
+        ? `Tu solicitud de devolución fue **aprobada**. ${adminNote || "Procesaremos el reembolso en máximo 2 días hábiles al mismo medio de pago original."}`
+        : `Tu solicitud de devolución fue revisada y no puede ser procesada. ${adminNote || "No cumple con los criterios: la cancelación debe hacerse con al menos 2 horas de anticipación a la cita."}`;
+
+    await Promise.all([
+      this.prisma.supportReply.create({ data: { ticketId, message, isAdmin: true } }),
+      this.prisma.supportTicket.update({ where: { id: ticketId }, data: { status } }),
+    ]);
+
+    return { success: true, action, ticketId };
+  }
+
+  async getBarberPayouts() {
+    const payments = await this.prisma.payment.findMany({
+      where: {
+        status: "APPROVED",
+        appointmentId: { not: null },
+        barberAmount: { gt: 0 },
+      },
+      include: {
+        appointment: {
+          include: {
+            barber: {
+              include: {
+                user: { select: { firstName: true, lastName: true, email: true, phone: true } },
+                barbershop: { select: { name: true } },
+              },
+            },
+            service: { select: { name: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const byBarber: Record<string, any> = {};
+    for (const p of payments) {
+      const barber = p.appointment?.barber;
+      if (!barber) continue;
+      const key = barber.id;
+      if (!byBarber[key]) {
+        byBarber[key] = {
+          barberId: barber.id,
+          firstName: barber.user.firstName,
+          lastName: barber.user.lastName,
+          email: barber.user.email,
+          phone: barber.user.phone,
+          barbershopName: barber.barbershop?.name ?? "—",
+          totalOwed: 0,
+          transactions: [],
+        };
+      }
+      byBarber[key].totalOwed += p.barberAmount || 0;
+      byBarber[key].transactions.push({
+        paymentId: p.id,
+        date: p.createdAt,
+        service: p.appointment?.service?.name ?? "—",
+        amount: p.amount,
+        barberAmount: p.barberAmount,
+        commissionAmount: p.commissionAmount,
+      });
+    }
+
+    return Object.values(byBarber).sort((a: any, b: any) => b.totalOwed - a.totalOwed);
+  }
+
+  async getTransactionsExport() {
+    const payments = await this.prisma.payment.findMany({
+      where: { status: "APPROVED" },
+      include: {
+        subscription: {
+          include: {
+            user: { select: { firstName: true, lastName: true, email: true } },
+            barbershop: { select: { name: true } },
+            plan: { select: { name: true } },
+          },
+        },
+        appointment: {
+          include: {
+            client: { include: { user: { select: { firstName: true, lastName: true, email: true } } } },
+            barber: { include: { user: { select: { firstName: true, lastName: true } } } },
+            barbershop: { select: { name: true } },
+            service: { select: { name: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 2000,
+    });
+
+    return payments.map((p) => {
+      const isSubscription = !!p.subscriptionId;
+      return {
+        id: p.id,
+        fecha: p.createdAt.toISOString(),
+        tipo: isSubscription ? "Suscripción" : "Cita",
+        estado: p.status,
+        metodo: p.method,
+        referencia: p.referenceId ?? "",
+        monto_total: p.amount,
+        comision_plataforma: p.commissionAmount ?? 0,
+        monto_barbero: p.barberAmount ?? 0,
+        cliente: isSubscription
+          ? `${p.subscription?.user?.firstName ?? ""} ${p.subscription?.user?.lastName ?? ""}`.trim()
+          : `${p.appointment?.client?.user?.firstName ?? ""} ${p.appointment?.client?.user?.lastName ?? ""}`.trim(),
+        email_cliente: isSubscription
+          ? (p.subscription?.user?.email ?? "")
+          : (p.appointment?.client?.user?.email ?? ""),
+        barbero: isSubscription
+          ? ""
+          : `${p.appointment?.barber?.user?.firstName ?? ""} ${p.appointment?.barber?.user?.lastName ?? ""}`.trim(),
+        barberia: isSubscription
+          ? (p.subscription?.barbershop?.name ?? "")
+          : (p.appointment?.barbershop?.name ?? ""),
+        plan_suscripcion: p.subscription?.plan?.name ?? "",
+        servicio: p.appointment?.service?.name ?? "",
+      };
+    });
   }
 
   async getAllSubscriptions(page = 1, limit = 20) {
