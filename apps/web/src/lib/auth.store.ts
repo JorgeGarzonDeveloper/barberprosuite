@@ -23,6 +23,8 @@ interface AuthState {
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
   clearError: () => void;
+  setAvatarUrl: (url: string) => void;
+  setUser: (user: User) => void;
 }
 
 interface RegisterData {
@@ -49,18 +51,8 @@ export const useAuthStore = create<AuthState>()(
         try {
           const res = await api.post("/auth/login", { email, password });
           const { user, accessToken, refreshToken } = res.data.data;
-
-          if (user.role !== "ADMIN") {
-            set({
-              error: "Acceso restringido. Este panel es solo para administradores.",
-              isLoading: false,
-            });
-            return;
-          }
-
           localStorage.setItem("accessToken", accessToken);
           localStorage.setItem("refreshToken", refreshToken);
-
           set({ user, accessToken, refreshToken, isAuthenticated: true, isLoading: false });
         } catch (err: any) {
           const message = err.response?.data?.message || "Credenciales incorrectas";
@@ -100,6 +92,11 @@ export const useAuthStore = create<AuthState>()(
       },
 
       clearError: () => set({ error: null }),
+
+      setAvatarUrl: (url) =>
+        set((s) => ({ user: s.user ? { ...s.user, avatarUrl: url } : s.user })),
+
+      setUser: (user) => set({ user }),
     }),
     {
       name: "bps-auth",
