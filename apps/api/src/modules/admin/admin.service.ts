@@ -183,36 +183,71 @@ export class AdminService {
   }
 
   async getRevenueBreakdown() {
-    const [subPayments, apptPayments, pendingRefunds, totalAppts] = await Promise.all([
+    const [subPayments, apptPayments, pendingRefunds, approvedRefunds, totalAppts, cancelledAppts] = await Promise.all([
+      // Suscripciones pagadas
       this.prisma.payment.aggregate({
         where: { status: "APPROVED", subscriptionId: { not: null } },
         _sum: { amount: true },
         _count: true,
       }),
+      // Pagos de citas (50% depósito + 10% comisión)
       this.prisma.payment.aggregate({
         where: { status: "APPROVED", appointmentId: { not: null } },
         _sum: { amount: true, commissionAmount: true, barberAmount: true },
         _count: true,
       }),
+      // Devoluciones PENDIENTES
       this.prisma.supportTicket.count({
         where: {
           subject: { contains: "devoluci", mode: "insensitive" },
           status: { in: ["OPEN", "IN_PROGRESS"] },
         },
       }),
+      // Devoluciones APROBADAS (resueltas)
+      this.prisma.supportTicket.count({
+        where: {
+          subject: { contains: "devoluci", mode: "insensitive" },
+          status: "RESOLVED",
+        },
+      }),
+      // Citas completadas
       this.prisma.appointment.count({ where: { status: "COMPLETED" } }),
+      // Citas canceladas
+      this.prisma.appointment.count({ where: { status: "CANCELLED" } }),
     ]);
 
+    const subscriptionRevenue = subPayments._sum.amount || 0;
+    const commissionRevenue   = apptPayments._sum.commissionAmount || 0;
+    const grossApptRevenue    = apptPayments._sum.amount || 0;          // Todo lo que entró por citas (depósito + comisión)
+    const pendingBarberPayouts = apptPayments._sum.barberAmount || 0;   // 50% a transferir a barberos
+    const totalPlatformRevenue = subscriptionRevenue + commissionRevenue; // Ganancia neta plataforma
+
+    // Estimación de devoluciones aprobadas (promedio 60% del valor de cita procesado)
+    // En producción idealmente habría un monto exacto en el ticket
+    const estimatedRefundedAmount = approvedRefunds * 0; // placeholder — se actualizará cuando haya monto en ticket
+
     return {
-      subscriptionRevenue: subPayments._sum.amount || 0,
+      // ── Ingresos brutos ──────────────────────────────────────────
+      grossTotalRevenue: subscriptionRevenue + grossApptRevenue,
+      subscriptionRevenue,
+      grossApptRevenue,
+
+      // ── Desglose por fuente (ganancia plataforma) ─────────────────
+      commissionRevenue,         // 10% de cada cita
+      totalPlatformRevenue,      // Ganancia neta: suscripciones + comisiones
+
+      // ── Obligaciones con barberos ─────────────────────────────────
+      pendingBarberPayouts,      // 50% depósitos a transferir
+
+      // ── Conteos ──────────────────────────────────────────────────
       subscriptionCount: subPayments._count,
-      commissionRevenue: apptPayments._sum.commissionAmount || 0,
-      appointmentPaymentsHandled: apptPayments._sum.amount || 0,
       appointmentCount: apptPayments._count,
-      pendingBarberPayouts: apptPayments._sum.barberAmount || 0,
-      totalPlatformRevenue: (subPayments._sum.amount || 0) + (apptPayments._sum.commissionAmount || 0),
-      pendingRefunds,
       completedAppointments: totalAppts,
+      cancelledAppointments: cancelledAppts,
+
+      // ── Devoluciones ──────────────────────────────────────────────
+      pendingRefunds,
+      approvedRefunds,
     };
   }
 

@@ -62,25 +62,58 @@ export default function AdminDashboard() {
       {/* Revenue breakdown summary */}
       {breakdown && (
         <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-          <h2 className="text-white font-bold text-lg mb-4">Desglose de ingresos</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-white font-bold text-lg">Desglose de ingresos</h2>
+              <p className="text-white/30 text-xs mt-0.5">Lo que es 100% ganancia tuya vs lo que pasas a barberos</p>
+            </div>
+          </div>
+
+          {/* P&L compacto */}
+          <div className="bg-white/3 border border-white/8 rounded-xl p-4 mb-4 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-white/50">Suscripciones (100% tuyo)</span>
+              <span className="text-green-400 font-semibold">{fmtCOP(breakdown.subscriptionRevenue)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-white/50">Comisiones 10% de citas</span>
+              <span className="text-[#c9a227] font-semibold">{fmtCOP(breakdown.commissionRevenue)}</span>
+            </div>
+            <div className="flex justify-between text-sm border-t border-white/10 pt-2">
+              <span className="text-white font-bold">= Ganancia neta plataforma</span>
+              <span className="text-[#c9a227] font-black">{fmtCOP(breakdown.totalPlatformRevenue)}</span>
+            </div>
+            <div className="flex justify-between text-sm border-t border-white/10 pt-2">
+              <span className="text-white/40">Depósitos pendientes → barberos</span>
+              <span className="text-orange-400 font-semibold">− {fmtCOP(breakdown.pendingBarberPayouts)}</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
             {[
               { label: "Suscripciones", value: fmtCOP(breakdown.subscriptionRevenue), sub: `${breakdown.subscriptionCount} pagos`, color: "#f472b6" },
-              { label: "Comisiones (10%)", value: fmtCOP(breakdown.commissionRevenue), sub: `${breakdown.appointmentCount} citas`, color: "#c9a227" },
-              { label: "Total plataforma", value: fmtCOP(breakdown.totalPlatformRevenue), sub: "Ingreso neto", color: "#4ade80" },
-              { label: "Pago a barberos", value: fmtCOP(breakdown.pendingBarberPayouts), sub: "Pendiente transferir", color: "#fb923c" },
+              { label: "Comisiones", value: fmtCOP(breakdown.commissionRevenue), sub: `${breakdown.appointmentCount} citas`, color: "#c9a227" },
             ].map((item) => (
-              <div key={item.label} className="bg-white/5 rounded-xl p-4 border border-white/5">
-                <p className="text-white/40 text-xs mb-2">{item.label}</p>
+              <div key={item.label} className="bg-white/5 rounded-xl p-3 border border-white/5">
+                <p className="text-white/40 text-xs mb-1">{item.label}</p>
                 <p className="font-bold text-base" style={{ color: item.color }}>{item.value}</p>
-                <p className="text-white/30 text-xs mt-1">{item.sub}</p>
+                <p className="text-white/30 text-xs mt-0.5">{item.sub}</p>
               </div>
             ))}
           </div>
-          {breakdown.pendingRefunds > 0 && (
-            <div className="mt-4 flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 text-amber-400 text-sm">
-              <span className="font-bold">⚠</span>
-              {breakdown.pendingRefunds} solicitud{breakdown.pendingRefunds !== 1 ? "es" : ""} de devolución pendiente{breakdown.pendingRefunds !== 1 ? "s" : ""} de revisar.
+
+          {(breakdown.pendingRefunds > 0 || breakdown.approvedRefunds > 0) && (
+            <div className="mt-4 space-y-2">
+              {breakdown.pendingRefunds > 0 && (
+                <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 text-amber-400 text-sm">
+                  ⚠ <strong>{breakdown.pendingRefunds}</strong> devolución{breakdown.pendingRefunds !== 1 ? "es" : ""} pendiente{breakdown.pendingRefunds !== 1 ? "s" : ""} de revisar.
+                </div>
+              )}
+              {breakdown.approvedRefunds > 0 && (
+                <div className="flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-xl px-4 py-3 text-blue-400 text-sm">
+                  ✓ <strong>{breakdown.approvedRefunds}</strong> devolución{breakdown.approvedRefunds !== 1 ? "es" : ""} aprobada{breakdown.approvedRefunds !== 1 ? "s" : ""} — verifica reembolso en Wompi.
+                </div>
+              )}
             </div>
           )}
         </div>
