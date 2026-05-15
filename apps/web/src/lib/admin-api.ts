@@ -27,6 +27,25 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return data.data ?? data;
 }
 
+async function uploadRequest<T>(path: string, form: FormData): Promise<T> {
+  const token = getToken();
+  const res = await fetch(`${BASE}${path}`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
+  });
+  if (res.status === 401) {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("admin_token");
+      window.location.href = "/admin/login";
+    }
+    throw new Error("Unauthorized");
+  }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.message ?? "Error subiendo archivo");
+  return data.data ?? data;
+}
+
 export const adminApi = {
   login: (email: string, password: string) =>
     request<{ token: string; user: any }>("/auth/login", {
@@ -42,8 +61,26 @@ export const adminApi = {
     request<any>(`/admin/users?page=${page}&limit=20&search=${search}&role=${role}`),
   updateUserStatus: (id: string, status: string) =>
     request<any>(`/admin/users/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
+  createBarber: (data: { firstName: string; lastName: string; email: string; phone: string; password: string }) =>
+    request<any>("/admin/barbers", { method: "POST", body: JSON.stringify(data) }),
 
-  getBarbershops: (page = 1) => request<any>(`/admin/barbershops?page=${page}&limit=20`),
+  getBarbershops: (page = 1, search = "", includeInactive = true) =>
+    request<any>(`/barbershops?page=${page}&limit=15&includeInactive=${includeInactive}${search ? `&search=${encodeURIComponent(search)}` : ""}`),
+  getBarbershopsAll: () =>
+    request<any>("/barbershops?limit=100&includeInactive=true"),
+  createBarbershop: (data: any) =>
+    request<any>("/barbershops", { method: "POST", body: JSON.stringify(data) }),
+  updateBarbershop: (id: string, data: any) =>
+    request<any>(`/barbershops/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  getBarbershopQR: (id: string) => request<any>(`/barbershops/${id}/qr`),
+  uploadBarbershopImages: (id: string, files: File[]) => {
+    const form = new FormData();
+    files.forEach((f) => form.append("images", f));
+    return uploadRequest<any>(`/barbershops/${id}/images`, form);
+  },
+  deleteBarbershopImage: (id: string, imageUrl: string) =>
+    request<any>(`/barbershops/${id}/images`, { method: "DELETE", body: JSON.stringify({ imageUrl }) }),
+
   getSubscriptions: (page = 1) => request<any>(`/admin/subscriptions?page=${page}&limit=20`),
 
   getRefunds: (page = 1, status = "") =>
