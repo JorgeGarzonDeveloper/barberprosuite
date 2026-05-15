@@ -151,14 +151,36 @@ export const adminApi = {
   },
 
   // ── Cuadre de pagos ──────────────────────────────────────────────────────
-  getPayouts: async (): Promise<{ barbershops: unknown[]; totalOwed: number }> => {
-    const { data } = await api.get("/admin/payouts");
+  getPayouts: async (statusFilter?: string): Promise<{ barbershops: unknown[]; totalOwed: number; payoutRecords: unknown[] }> => {
+    const { data } = await api.get("/admin/payouts", { params: statusFilter ? { status: statusFilter } : undefined });
     return data?.data ?? data;
   },
 
   getPayoutTransactions: async (params?: { barbershopId?: string }): Promise<unknown[]> => {
     const { data } = await api.get("/admin/payouts/transactions", { params });
     return data?.data ?? data ?? [];
+  },
+
+  createPayoutRecord: async (payload: { barberId: string; barbershopId?: string; amount: number; notes?: string }): Promise<unknown> => {
+    const { data } = await api.post("/admin/payouts/record", payload);
+    return data?.data ?? data;
+  },
+
+  updatePayoutRecord: async (id: string, payload: { status?: string; notes?: string; proofUrl?: string }): Promise<void> => {
+    await api.patch(`/admin/payouts/record/${id}`, payload);
+  },
+
+  uploadPayoutProof: async (id: string, file: File): Promise<{ proofUrl: string }> => {
+    const formData = new FormData();
+    formData.append("proof", file);
+    const { data } = await api.post(`/admin/payouts/record/${id}/proof`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data?.data ?? data;
+  },
+
+  deletePayoutRecord: async (id: string): Promise<void> => {
+    await api.delete(`/admin/payouts/record/${id}`);
   },
 
   // ── Devoluciones ─────────────────────────────────────────────────────────

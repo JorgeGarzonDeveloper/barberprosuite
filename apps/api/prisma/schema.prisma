@@ -88,6 +88,7 @@ model BarberProfile {
   queueEntries QueueEntry[]  @relation("BarberQueue")
   services     Service[]     @relation("BarberServices")
   reviews      Review[]      @relation("BarberReviews")
+  payoutRecords BarberPayoutRecord[]
 
   @@map("barber_profiles")
 }
@@ -135,13 +136,14 @@ model Barbershop {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  owner        User           @relation("BarbershopOwner", fields: [ownerId], references: [id])
-  barbers      BarberProfile[]
-  services     Service[]
-  appointments Appointment[]
-  queueEntries QueueEntry[]
-  subscription Subscription?
-  reviews      Review[]
+  owner         User           @relation("BarbershopOwner", fields: [ownerId], references: [id])
+  barbers       BarberProfile[]
+  services      Service[]
+  appointments  Appointment[]
+  queueEntries  QueueEntry[]
+  subscription  Subscription?
+  reviews       Review[]
+  payoutRecords BarberPayoutRecord[]
 
   @@map("barbershops")
 }
@@ -348,6 +350,34 @@ enum PaymentStatus {
   DECLINED
   VOIDED
   ERROR
+}
+
+// ==================== BARBER PAYOUT RECORDS ====================
+
+enum BarberPayoutStatus {
+  PENDING
+  IN_PROGRESS
+  PAID
+}
+
+model BarberPayoutRecord {
+  id           String             @id @default(uuid())
+  barberId     String
+  barbershopId String?
+  status       BarberPayoutStatus @default(PENDING)
+  amount       Float
+  proofUrl     String?
+  notes        String?
+  paidAt       DateTime?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  barber     BarberProfile @relation(fields: [barberId], references: [id], onDelete: Cascade)
+  barbershop Barbershop?   @relation(fields: [barbershopId], references: [id])
+
+  @@index([barberId])
+  @@index([status])
+  @@map("barber_payout_records")
 }
 
 // ==================== WEB PUSH SUBSCRIPTIONS ====================

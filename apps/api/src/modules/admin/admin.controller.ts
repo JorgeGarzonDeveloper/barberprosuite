@@ -3,11 +3,16 @@ import {
   Get,
   Patch,
   Post,
+  Delete,
   Param,
   Query,
   UseGuards,
   Body,
+  UploadedFile,
+  UseInterceptors,
 } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { memoryStorage } from "multer";
 import { ApiTags, ApiBearerAuth, ApiOperation } from "@nestjs/swagger";
 import { AuthGuard } from "@nestjs/passport";
 import { AdminService } from "./admin.service";
@@ -126,9 +131,48 @@ export class AdminController {
   }
 
   @Get("payouts")
-  @ApiOperation({ summary: "Cuadre de pagos pendientes por barbero" })
-  getPayouts() {
-    return this.adminService.getBarberPayouts();
+  @ApiOperation({ summary: "Cuadre de pagos por barbero con registros" })
+  getPayouts(@Query("status") status?: string) {
+    return this.adminService.getBarberPayouts(status);
+  }
+
+  @Post("payouts/record")
+  @ApiOperation({ summary: "Crear registro de pago a barbero" })
+  createPayoutRecord(
+    @Body() body: { barberId: string; barbershopId?: string; amount: number; notes?: string }
+  ) {
+    return this.adminService.createPayoutRecord(body);
+  }
+
+  @Patch("payouts/record/:id")
+  @ApiOperation({ summary: "Actualizar estado de registro de pago" })
+  updatePayoutRecord(
+    @Param("id") id: string,
+    @Body() body: { status?: string; notes?: string; proofUrl?: string }
+  ) {
+    return this.adminService.updatePayoutRecord(id, body);
+  }
+
+  @Post("payouts/record/:id/proof")
+  @ApiOperation({ summary: "Subir comprobante de pago" })
+  @UseInterceptors(FileInterceptor("proof", { storage: memoryStorage() }))
+  async uploadPayoutProof(
+    @Param("id") id: string,
+    @UploadedFile() file: Express.Multer.File
+  ) {
+    return this.adminService.uploadPayoutProof(id, file);
+  }
+
+  @Delete("payouts/record/:id")
+  @ApiOperation({ summary: "Eliminar registro de pago" })
+  deletePayoutRecord(@Param("id") id: string) {
+    return this.adminService.deletePayoutRecord(id);
+  }
+
+  @Get("payouts/transactions")
+  @ApiOperation({ summary: "Listar transacciones de pagos" })
+  getPayoutTransactions(@Query("barbershopId") barbershopId?: string) {
+    return this.adminService.getPayoutTransactions(barbershopId);
   }
 
   @Get("transactions/export")

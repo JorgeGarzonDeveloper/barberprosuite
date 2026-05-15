@@ -289,7 +289,23 @@ export class AdminService {
     return { success: true, action, ticketId };
   }
 
-  async getBarberPayouts() {
+  async getBarberPayouts(statusFilter?: string) {
+    // Get payout records grouped by status
+    const payoutRecords = await this.prisma.barberPayoutRecord.findMany({
+      where: statusFilter ? { status: statusFilter as any } : undefined,
+      include: {
+        barber: {
+          include: {
+            user: { select: { firstName: true, lastName: true, email: true, phone: true } },
+            barbershop: { select: { name: true } },
+          },
+        },
+        barbershop: { select: { name: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    // Also compute pending amounts from payments not yet covered by payout records
     const payments = await this.prisma.payment.findMany({
       where: {
         status: "APPROVED",
@@ -312,6 +328,14 @@ export class AdminService {
       orderBy: { createdAt: "desc" },
     });
 
+    // Compute total paid per barber from payout records
+    const totalPaidByBarber: Record<string, number> = {};
+    for (const r of payoutRecords) {
+      if (r.status === "PAID") {
+        totalPaidByBarber[r.barberId] = (totalPaidByBarber[r.barberId] ?? 0) + r.amount;
+      }
+    }
+
     const byBarber: Record<string, any> = {};
     for (const p of payments) {
       const barber = p.appointment?.barber;
@@ -325,11 +349,13 @@ export class AdminService {
           email: barber.user.email,
           phone: barber.user.phone,
           barbershopName: barber.barbershop?.name ?? "—",
+          totalEarned: 0,
+          totalPaid: totalPaidByBarber[barber.id] ?? 0,
           totalOwed: 0,
           transactions: [],
         };
       }
-      byBarber[key].totalOwed += p.barberAmount || 0;
+      byBarber[key].totalEarned += p.barberAmount || 0;
       byBarber[key].transactions.push({
         paymentId: p.id,
         date: p.createdAt,
@@ -340,7 +366,112 @@ export class AdminService {
       });
     }
 
-    return Object.values(byBarber).sort((a: any, b: any) => b.totalOwed - a.totalOwed);
+    for (const b of Object.values(byBarber) as any[]) {
+      b.totalOwed = Math.max(0, b.totalEarned - b.totalPaid);
+    }
+
+    const barbershops = Object.values(byBarber).sort((a: any, b: any) => b.totalOwed - a.totalOwed);
+    const totalOwed = barbershops.reduce((s: number, b: any) => s + b.totalOwed, 0);
+
+    return { barbershops, totalOwed, payoutRecords };
+  }
+
+  async getPayoutTransactions(barbershopId?: string) {
+    const payments = await this.prisma.payment.findMany({
+      where: {
+        status: "APPROVED",
+        appointmentId: { not: null },
+        barberAmount: { gt: 0 },
+        ...(barbershopId ? { appointment: { barbershopId } } : {}),
+      },
+      include: {
+        appointment: {
+          include: {
+            barber: { include: { user: { select: { firstName: true, lastName: true } } } },
+            barbershop: { select: { name: true } },
+            service: { select: { name: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return payments.map((p) => ({
+      paymentId: p.id,
+      date: p.createdAt,
+      service: p.appointment?.service?.name ?? "—",
+      amount: p.amount,
+      barberAmount: p.barberAmount,
+      commissionAmount: p.commissionAmount,
+      barberId: p.appointment?.barber?.id,
+      barbershopId: p.appointment?.barbershopId,
+      barbershopName: p.appointment?.barbershop?.name ?? "—",
+      barberName: p.appointment?.barber
+        ? `${p.appointment.barber.user.firstName} ${p.appointment.barber.user.lastName}`
+        : "—",
+    }));
+  }
+
+  async createPayoutRecord(data: { barberId: string; barbershopId?: string; amount: number; notes?: string }) {
+    return this.prisma.barberPayoutRecord.create({
+      data: {
+        barberId: data.barberId,
+        barbershopId: data.barbershopId,
+        amount: data.amount,
+        notes: data.notes,
+        status: "IN_PROGRESS",
+      },
+      include: {
+        barber: { include: { user: { select: { firstName: true, lastName: true } } } },
+      },
+    });
+  }
+
+  async updatePayoutRecord(id: string, data: { status?: string; notes?: string; proofUrl?: string }) {
+    const paidAt = data.status === "PAID" ? new Date() : undefined;
+    return this.prisma.barberPayoutRecord.update({
+      where: { id },
+      data: {
+        ...(data.status ? { status: data.status as any } : {}),
+        ...(data.notes !== undefined ? { notes: data.notes } : {}),
+        ...(data.proofUrl !== undefined ? { proofUrl: data.proofUrl } : {}),
+        ...(paidAt ? { paidAt } : {}),
+      },
+    });
+  }
+
+  async uploadPayoutProof(recordId: string, file: Express.Multer.File): Promise<{ proofUrl: string }> {
+    const { S3Client, PutObjectCommand } = await import("@aws-sdk/client-s3");
+    const { v4: uuidv4 } = await import("uuid");
+    const s3 = new S3Client({ region: process.env.AWS_REGION || "us-east-2" });
+    const bucket = process.env.AWS_S3_BUCKET || "barberprosuite-media";
+    const region = process.env.AWS_REGION || "us-east-2";
+
+    const ext = file.originalname.split(".").pop() ?? "jpg";
+    const key = `payouts/${recordId}/${uuidv4()}.${ext}`;
+
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+      })
+    );
+
+    const proofUrl = `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
+
+    await this.prisma.barberPayoutRecord.update({
+      where: { id: recordId },
+      data: { proofUrl },
+    });
+
+    return { proofUrl };
+  }
+
+  async deletePayoutRecord(id: string) {
+    await this.prisma.barberPayoutRecord.delete({ where: { id } });
+    return { success: true };
   }
 
   async getTransactionsExport() {
