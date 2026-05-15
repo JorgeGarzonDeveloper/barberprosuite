@@ -19,11 +19,13 @@ import {
   Calendar,
   QrCode,
   LogIn,
+  Bell,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import Logo from "@/components/ui/Logo";
+import api from "@/lib/api";
 
 function BarbershopSkeleton() {
   return (
@@ -46,6 +48,16 @@ export default function HomePage() {
     lat: number;
     lng: number;
   } | null>(null);
+
+  const { data: unreadData } = useQuery({
+    queryKey: ["notifications-unread"],
+    queryFn: () =>
+      api.get("/notifications?limit=1").then((r) => r.data?.unreadCount ?? 0).catch(() => 0),
+    enabled: isAuthenticated,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  });
+  const unreadCount: number = unreadData ?? 0;
 
   useEffect(() => {
     if (isAuthenticated) fetchCurrentEntry();
@@ -96,7 +108,22 @@ export default function HomePage() {
             {isAuthenticated ? (user?.firstName || "Usuario") : "Invitado"} 👋
           </h1>
         </div>
-        <Logo variant="full" size="sm" />
+        <div className="flex items-center gap-3">
+          <Logo variant="full" size="sm" />
+          {isAuthenticated && (
+            <button
+              onClick={() => router.push("/notifications")}
+              className="relative p-2 rounded-full hover:bg-white/5 transition-colors"
+            >
+              <Bell size={22} className="text-white" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-primary text-black text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Guest CTA */}

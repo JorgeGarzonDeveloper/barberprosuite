@@ -170,7 +170,7 @@ export default function AdminUsersPage() {
             key={f.value}
             onClick={() => { setRoleFilter(f.value); setPage(1); }}
             className={cn(
-              "px-3.5 py-1.5 rounded-full text-xs font-medium border whitespace-nowrap transition-colors",
+              "px-3.5 py-1.5 rounded-full text-xs font-medium border whitespace-nowrap shrink-0 transition-colors",
               roleFilter === f.value
                 ? "bg-primary/15 border-primary/40 text-primary"
                 : "bg-white/5 border-white/10 text-text-secondary hover:text-white"

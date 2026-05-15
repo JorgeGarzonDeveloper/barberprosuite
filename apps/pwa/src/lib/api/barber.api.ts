@@ -44,7 +44,19 @@ export const barberApi = {
 
   getSchedule: async (): Promise<Record<string, unknown>[]> => {
     const { data } = await api.get("/barber/schedule");
-    return Array.isArray(data) ? data : (data?.data ?? data?.schedule ?? []);
+    // Handle { data: [...] } wrapper and object format { monday: {...} }
+    const raw = data?.data ?? data;
+    if (Array.isArray(raw)) return raw;
+    if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+      // Convert object format { monday: { enabled, start, end } } → array format
+      return Object.entries(raw).map(([day, val]: [string, any]) => ({
+        dayOfWeek: day.toUpperCase(),
+        isOpen: val?.enabled ?? false,
+        openTime: val?.start ?? "09:00",
+        closeTime: val?.end ?? "18:00",
+      }));
+    }
+    return [];
   },
 
   updateSchedule: async (schedule: unknown[]): Promise<void> => {

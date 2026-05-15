@@ -113,15 +113,23 @@ export default function BarbershopPage() {
               {shop.rating.toFixed(1)} ({shop.totalReviews} reseñas)
             </span>
           </div>
-          <div className="flex items-center gap-2 mt-2 text-text-secondary text-sm">
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${shop.address}, ${shop.city}`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 mt-2 text-text-secondary text-sm hover:text-white transition-colors group"
+          >
             <MapPin size={14} className="text-primary shrink-0" />
-            <span>{shop.address}, {shop.city}</span>
-          </div>
+            <span className="group-hover:underline">{shop.address}, {shop.city}</span>
+          </a>
           {shop.phone && (
-            <div className="flex items-center gap-2 mt-1 text-text-secondary text-sm">
+            <a
+              href={`tel:${shop.phone}`}
+              className="flex items-center gap-2 mt-1 text-text-secondary text-sm hover:text-white transition-colors"
+            >
               <Phone size={14} className="text-primary shrink-0" />
-              <span>{shop.phone}</span>
-            </div>
+              <span className="hover:underline">{shop.phone}</span>
+            </a>
           )}
         </div>
 

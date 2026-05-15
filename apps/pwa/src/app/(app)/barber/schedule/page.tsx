@@ -48,6 +48,7 @@ export default function BarberSchedulePage() {
   const { data, isLoading } = useQuery({
     queryKey: ["barber-schedule"],
     queryFn: () => barberApi.getSchedule(),
+    retry: false,
   });
 
   useEffect(() => {
