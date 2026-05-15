@@ -96,4 +96,26 @@ export const adminApi = {
 
   assignBarber: (userId: string, barbershopId: string) =>
     request<any>(`/admin/barbers/${userId}/assign/${barbershopId}`, { method: "POST" }),
+
+  // Appointments
+  getAppointments: (page = 1, status = "") =>
+    request<any>(`/admin/appointments?page=${page}&limit=15${status ? `&status=${status}` : ""}`),
+  cancelAppointment: (id: string) =>
+    request<any>(`/appointments/${id}/cancel`, { method: "PATCH" }),
+
+  // Queue
+  getAdminBarbershops: () => request<any>("/barbershops?limit=100&includeInactive=false"),
+  getQueue: (barbershopId: string) => request<any>(`/queue/${barbershopId}`),
+
+  // Notifications
+  getNotifications: () => request<any>("/notifications?limit=50"),
+  markNotificationRead: (id: string) => request<any>(`/notifications/${id}/read`, { method: "PATCH" }),
+  sendNotificationAll: (payload: { title: string; body: string; type: string }) =>
+    request<any>("/notifications/send-all", { method: "POST", body: JSON.stringify(payload) }),
+
+  // Settings (uses regular user token — but admin uses admin_token stored as accessToken locally)
+  updateProfile: (data: { firstName: string; lastName: string; email: string }) =>
+    request<any>("/users/profile", { method: "PATCH", body: JSON.stringify(data) }),
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+    request<any>("/auth/change-password", { method: "PATCH", body: JSON.stringify(data) }),
 };

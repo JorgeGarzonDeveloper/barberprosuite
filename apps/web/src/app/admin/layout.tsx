@@ -6,16 +6,21 @@ import Link from "next/link";
 import {
   LayoutDashboard, Users, Scissors, BarChart3, CreditCard,
   RotateCcw, DollarSign, Bell, LogOut, Menu, X,
+  Calendar, UsersRound, Settings,
 } from "lucide-react";
 
 const NAV = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { href: "/admin/analytics", label: "Analíticas", icon: BarChart3 },
-  { href: "/admin/refunds", label: "Devoluciones", icon: RotateCcw },
-  { href: "/admin/payouts", label: "Cuadre de pagos", icon: DollarSign },
-  { href: "/admin/users", label: "Usuarios", icon: Users },
-  { href: "/admin/barbershops", label: "Barberías", icon: Scissors },
-  { href: "/admin/subscriptions", label: "Suscripciones", icon: CreditCard },
+  { href: "/admin",               label: "Dashboard",      icon: LayoutDashboard, exact: true },
+  { href: "/admin/analytics",     label: "Analíticas",     icon: BarChart3 },
+  { href: "/admin/users",         label: "Usuarios",       icon: Users },
+  { href: "/admin/barbershops",   label: "Barberías",      icon: Scissors },
+  { href: "/admin/appointments",  label: "Citas",          icon: Calendar },
+  { href: "/admin/queue",         label: "Cola virtual",   icon: UsersRound },
+  { href: "/admin/subscriptions", label: "Suscripciones",  icon: CreditCard },
+  { href: "/admin/payouts",       label: "Cuadre de pagos",icon: DollarSign },
+  { href: "/admin/refunds",       label: "Devoluciones",   icon: RotateCcw },
+  { href: "/admin/notifications", label: "Notificaciones", icon: Bell },
+  { href: "/admin/settings",      label: "Configuración",  icon: Settings },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

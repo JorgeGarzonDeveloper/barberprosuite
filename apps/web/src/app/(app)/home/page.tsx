@@ -1,17 +1,25 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth.store";
 import { api } from "@/lib/api";
-import { MapPin, Clock, Calendar, ChevronRight, Scissors, Bell, Users } from "lucide-react";
-
-function fmtCOP(n: number) {
-  return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
-}
+import { MapPin, Clock, Calendar, ChevronRight, Scissors, Users, QrCode, AlertCircle, CreditCard } from "lucide-react";
 
 export default function HomePage() {
   const { user } = useAuthStore();
+  const [geoCoords, setGeoCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setGeoCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => setGeoCoords(null),
+        { timeout: 6000 }
+      );
+    }
+  }, []);
 
   const { data: queueEntry } = useQuery({
     queryKey: ["my-queue-entry"],
@@ -27,9 +35,19 @@ export default function HomePage() {
   });
 
   const { data: nearbyShops } = useQuery({
-    queryKey: ["nearby-shops-home"],
-    queryFn: () => api.get("/barbershops?limit=6&isActive=true").then((r) => r.data.data?.barbershops ?? []).catch(() => []),
+    queryKey: ["nearby-shops-home", geoCoords?.lat, geoCoords?.lng],
+    queryFn: () => {
+      const url = geoCoords
+        ? `/barbershops/nearby?lat=${geoCoords.lat}&lng=${geoCoords.lng}&radius=15&limit=6`
+        : "/barbershops?limit=6&isActive=true";
+      return api.get(url).then((r) => {
+        const d = r.data.data;
+        if (Array.isArray(d)) return d;
+        return d?.barbershops ?? d?.results ?? [];
+      }).catch(() => []);
+    },
     retry: false,
+    enabled: geoCoords !== undefined, // wait until geolocation resolves or times out
   });
 
   const { data: barberQueue } = useQuery({
@@ -39,6 +57,15 @@ export default function HomePage() {
     retry: false,
     refetchInterval: 15000,
   });
+
+  const { data: subscription } = useQuery({
+    queryKey: ["my-subscription-home"],
+    queryFn: () => api.get("/subscriptions/my").then((r) => r.data.data).catch(() => null),
+    enabled: user?.role === "BARBER",
+    retry: false,
+  });
+
+  const barberHasNoSub = user?.role === "BARBER" && subscription !== undefined && (!subscription || subscription.status !== "ACTIVE");
 
   const greeting = (() => {
     const h = new Date().getHours();
@@ -53,12 +80,31 @@ export default function HomePage() {
       <div className="mb-6">
         <p className="text-white/40 text-sm">{greeting},</p>
         <h1 className="text-2xl font-bold text-white">{user?.firstName ?? "Usuario"} 👋</h1>
-        <p className="text-white/30 text-xs mt-0.5 capitalize">{user?.role?.toLowerCase() === "barber" ? "Barbero" : "Cliente"}</p>
+        <p className="text-white/30 text-xs mt-0.5">
+          {user?.role === "BARBER" ? "Barbero" : user?.role === "ADMIN" ? "Administrador" : "Cliente"}
+        </p>
       </div>
 
-      {/* Active queue card */}
-      {queueEntry && (
-        <Link href={`/cola/${queueEntry.id}`}
+      {/* Subscription banner for barbers */}
+      {barberHasNoSub && (
+        <Link href="/suscripcion"
+          className="flex items-start gap-3 bg-amber-500/10 border border-amber-500/25 rounded-2xl p-4 mb-4 hover:bg-amber-500/15 transition-all">
+          <AlertCircle size={20} className="text-amber-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-amber-400 font-bold text-sm">
+              {subscription?.status === "PENDING_PAYMENT" ? "Pago pendiente" : "Sin suscripción activa"}
+            </p>
+            <p className="text-amber-400/60 text-xs mt-0.5">
+              Activa tu plan para recibir clientes y gestionar tu agenda
+            </p>
+          </div>
+          <CreditCard size={16} className="text-amber-400/50 flex-shrink-0 mt-0.5" />
+        </Link>
+      )}
+
+      {/* Active queue card (for clients) */}
+      {queueEntry && user?.role !== "BARBER" && (
+        <Link href="/cola"
           className="block bg-[#c9a227]/10 border border-[#c9a227]/30 rounded-2xl p-4 mb-4 hover:bg-[#c9a227]/15 transition-all">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -71,6 +117,23 @@ export default function HomePage() {
               </div>
             </div>
             <ChevronRight size={16} className="text-[#c9a227]" />
+          </div>
+        </Link>
+      )}
+
+      {/* Scan QR CTA for clients not in queue */}
+      {!queueEntry && user?.role !== "BARBER" && user?.role !== "ADMIN" && (
+        <Link href="/scan"
+          className="block bg-white/5 border border-white/10 rounded-2xl p-4 mb-4 hover:border-[#c9a227]/30 hover:bg-[#c9a227]/5 transition-all group">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#c9a227]/15 flex items-center justify-center group-hover:bg-[#c9a227]/25 transition-all">
+              <QrCode size={20} className="text-[#c9a227]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-white font-bold text-sm">Unirte a una cola</p>
+              <p className="text-white/40 text-xs">Escanea el QR de tu barbería</p>
+            </div>
+            <ChevronRight size={16} className="text-white/20" />
           </div>
         </Link>
       )}
@@ -173,7 +236,9 @@ export default function HomePage() {
       {user?.role !== "BARBER" && Array.isArray(nearbyShops) && nearbyShops.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-white font-bold">Barberías</h2>
+            <h2 className="text-white font-bold">
+              {geoCoords ? "Barberías cercanas" : "Barberías"}
+            </h2>
             <Link href="/mapa" className="text-[#c9a227] text-sm hover:underline">Ver mapa</Link>
           </div>
           <div className="space-y-2">
@@ -188,7 +253,8 @@ export default function HomePage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-white text-sm font-semibold truncate">{s.name}</p>
                   <p className="text-white/40 text-xs flex items-center gap-1">
-                    <MapPin size={10} />{s.address ?? s.city ?? "Colombia"}
+                    <MapPin size={10} />
+                    {s.distanceKm != null ? `${s.distanceKm.toFixed(1)} km · ` : ""}{s.address ?? s.city ?? "Colombia"}
                   </p>
                 </div>
                 <ChevronRight size={16} className="text-white/20 flex-shrink-0" />
