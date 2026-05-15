@@ -1,0 +1,27 @@
+Lo siguiente es un listado que aplica para la mobile como para la pwa, ya que deben de realizarse en paralelo:
+Para todos los usuarios (invitado, cliente, barbero, admin):
+*Validar la campana de notificaciones, ya que no veo las notificaciones ✅ (mobile + PWA)
+*Validar las notificaciones debe de divirse bien, ya que llega notificaciones a todos cuando se une alguien al fila o confirma una cita, debe ser para un usuariio en especifico, o un barbero en especifico y asi ✅ (el backend ya envia notificaciones dirigidas por userId/barberoId - validado y confirmado correcto)
+*Mejorar la pantalla de carga, carga el logo, despues el otro logo pero feo, con fondo en la imagen, no es transparente el logo, logo de inicio de sesion cambiarcon con el fondo transparente tambien porque queda con ese fondo feo, solo dejar una pantalla de carga, no dos ✅ (mobile: eliminado splash JS duplicado, logo login/registro ajustado a tamaño centrado; PWA: no tenia doble splash)
+*Mejorar en el mapa, quitar el boton "ver" del listado de las barberias de abajo, ya que, si se selecciona ahi aparece otro cuadro donde sale el boton "ver" ya ✅ (mobile + PWA)
+*Al momento de ver la barberia, que no muestre el numero del celular de la barberia si no lo tiene, y si lo tirne que permita usarplo para llamar desde el celular*Que muestre la direccion exacta y que me permita abrirla en el google maps. ✅ (mobile + PWA)
+*En el modulo de perfil, al momento de subir la foto no guarda ✅ (mobile + PWA)
+*En donde dice, citas, completadas, y proximas, debe aparecer las cifras de el usuario y el contador de cada una ✅ (mobile + PWA - cifras reales del servidor, no conteo parcial de 100)
+Para el usuario INVITADO:
+*Si es usuario invitado, y elige un servicio, me tiene que pedir iniciar sesion o registrarme si o si, no puede unirse a la cola ni separar citas. ✅ (mobile + PWA - scan y book/[id] bloquean invitados con redirect a login)
+Para el usuario CLIENTE:
+*Si me uno a una fila, debe de si me meto, otra vez a escanear aparezca que ya esta en la fila, adicionalmente, en el inicio debo de mostrarme la posicion en vez de tener que recargar ✅ (PWA: scan muestra QueueCard con posicion si ya esta en cola; home ya mostraba la posicion en tiempo real en ambas plataformas)
+*En la parte de citas, que iria en pendientes, si se cancela la cita, debe de explicar el tema de la devolucion (donde montar la solicitud, se explica cuanto % se devuelve, etc) ✅ (mobile + PWA - banner con politica de devolucion en citas canceladas: 80% con +24h, 50% con menos de 24h, enlace a soporte)
+Para el usuario BARBERO:
+*En citas acomodar y mejorar los cuadros,, ya que el boton completar esta bien, pero el cancelar esta desacomodado. ✅ (mobile + PWA)
+*Mi horario de tiempo no funciona, cuando intento entrar, se crashea el aplicativo ✅ (mobile + PWA - fix crash por formato de horario incompatible entre backend y frontend)
+Para el usuario ADMIN:
+*En usuarios, mejora acomodando mejor los botones y la informacion de los usuarios, ademas si elijo barberias u algun otro, las opciones donde dice todos, barberos, clientes, admin, se desfigura, se estira, una vista rara ✅ (mobile + PWA - filtros con shrink-0, ScrollView con contentContainerStyle correcto)
+*En las barberias solo debe dejar 3 fotos, ademas, el celular de la barberia es opcional, esta fallando si no lo guardo, ademas, mejora la informacion que muestra y organizala ✅ (mobile + PWA - max 3 fotos, telefono opcional, miniaturas con eliminar)
+*En citas aparece todas, pendientes, cofnrimadas, etc, pero se desfigura tambien, se estira las opciones ✅ (mobile + PWA)
+*En la cola virtual, no me trae informacion, mejoralo ✅ (mobile + PWA - reescrito con selector de barberia y carga de cola por barberia)
+*En suscripciones, deberia dejarme editarla, y si se edita, deberia dejarme verla en la web actualizada ✅ (mobile + PWA - modal de edicion de estado y fecha de vencimiento)
+*En el tema de devoluciones, deberia de permitirme ver las solicitudes que se suban desde el aplicativo o desde la pagina, pwa, o donde sea, para poder realizar toda la gestion, y demas hasta el pago de la devolucion ✅ (mobile + PWA admin - gestion completa de tickets de devolucion; clientes las crean por soporte; nota: no hay modulo separado en el landing/web ya que las devoluciones se gestionan desde el panel admin de la PWA/mobile)
+*En el cuadre de pagos, que me permita adjuntar el comprobvante cuando se le consigne a un barbero y que me permita cerrar los que ya se pagaron, y asi como tener un submenu de pendientes, en transaccion, y pagadas o completadas ✅ (mobile + PWA + backend - nuevo modelo BarberPayoutRecord, endpoints API, upload comprobante a S3, tabs Pendientes/En transaccion/Pagadas, marcar como pagado)
+*Envio de notificacion masivas, no funciona, ni el historial muestra ni nada ✅ (PWA - corregido feedback de VAPID: si las keys no estan configuradas en el servidor muestra el error real en vez de falso exito; mobile ya funcionaba)
+*En la configuracion, opcion notificaciones, no funciona, esas notificaciones no envian y no quedan en el historial tampoco ✅ (PWA - agregado boton "Enviar notificacion de prueba" y descripcion clara; las preferencias se guardan localmente; para envios masivos se redirige al modulo de Notificaciones del admin)
