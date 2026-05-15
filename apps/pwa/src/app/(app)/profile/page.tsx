@@ -30,6 +30,8 @@ import {
   Eye,
   EyeOff,
   KeyRound,
+  Bell,
+  Clock,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -123,11 +125,13 @@ export default function ProfilePage() {
       ? [
           { icon: <Crown size={18} className="text-primary" />, label: "Mi suscripción", href: "/subscription" },
           { icon: <Scissors size={18} className="text-primary" />, label: "Mis servicios", href: "/barber/services" },
+          { icon: <Clock size={18} className="text-primary" />, label: "Mi horario", href: "/barber/schedule" },
         ]
       : []),
     ...(user?.role === "ADMIN"
       ? [{ icon: <Shield size={18} className="text-primary" />, label: "Panel admin", href: "/admin" }]
       : []),
+    { icon: <Bell size={18} className="text-text-secondary" />, label: "Notificaciones", href: "/notifications" },
     { icon: <Calendar size={18} className="text-text-secondary" />, label: "Mis citas", href: "/appointments" },
     { icon: <MapPin size={18} className="text-text-secondary" />, label: "Explorar barberías", href: "/map" },
     { icon: <QrCode size={18} className="text-text-secondary" />, label: "Unirse a una fila", href: "/scan" },

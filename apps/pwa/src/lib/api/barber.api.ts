@@ -41,4 +41,13 @@ export const barberApi = {
   deleteService: async (id: string): Promise<void> => {
     await api.delete(`/barber/services/${id}`);
   },
+
+  getSchedule: async (): Promise<Record<string, unknown>[]> => {
+    const { data } = await api.get("/barber/schedule");
+    return Array.isArray(data) ? data : (data?.data ?? data?.schedule ?? []);
+  },
+
+  updateSchedule: async (schedule: unknown[]): Promise<void> => {
+    await api.patch("/barber/schedule", { schedule });
+  },
 };

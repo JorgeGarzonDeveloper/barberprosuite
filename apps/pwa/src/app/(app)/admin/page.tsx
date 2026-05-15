@@ -17,18 +17,22 @@ import {
   TrendingUp,
   UserCheck,
   ChevronRight,
+  RotateCcw,
+  Bell,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 const adminSections = [
-  { label: "Usuarios", href: "/admin/users", icon: <Users size={18} /> },
-  { label: "Barberías", href: "/admin/barbershops", icon: <Store size={18} /> },
-  { label: "Citas", href: "/admin/appointments", icon: <Calendar size={18} /> },
-  { label: "Colas", href: "/admin/queue", icon: <Activity size={18} /> },
-  { label: "Analytics", href: "/admin/analytics", icon: <TrendingUp size={18} /> },
-  { label: "Suscripciones", href: "/admin/subscriptions", icon: <Crown size={18} /> },
-  { label: "Notificaciones", href: "/admin/notifications", icon: <Users size={18} /> },
-  { label: "Configuración", href: "/admin/settings", icon: <UserCheck size={18} /> },
+  { label: "Usuarios",         href: "/admin/users",          icon: <Users size={18} /> },
+  { label: "Barberías",        href: "/admin/barbershops",    icon: <Store size={18} /> },
+  { label: "Citas",            href: "/admin/appointments",   icon: <Calendar size={18} /> },
+  { label: "Colas",            href: "/admin/queue",          icon: <Activity size={18} /> },
+  { label: "Analytics",        href: "/admin/analytics",      icon: <TrendingUp size={18} /> },
+  { label: "Suscripciones",    href: "/admin/subscriptions",  icon: <Crown size={18} /> },
+  { label: "Cuadre de pagos",  href: "/admin/payouts",        icon: <DollarSign size={18} /> },
+  { label: "Devoluciones",     href: "/admin/refunds",        icon: <RotateCcw size={18} /> },
+  { label: "Notificaciones",   href: "/admin/notifications",  icon: <Bell size={18} /> },
+  { label: "Configuración",    href: "/admin/settings",       icon: <UserCheck size={18} /> },
 ];
 
 export default function AdminDashboardPage() {

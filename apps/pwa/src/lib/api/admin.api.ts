@@ -146,6 +146,34 @@ export const adminApi = {
     await api.post("/admin/notifications/send", payload);
   },
 
+  // ── Cuadre de pagos ──────────────────────────────────────────────────────
+  getPayouts: async (): Promise<{ barbershops: unknown[]; totalOwed: number }> => {
+    const { data } = await api.get("/admin/payouts");
+    return data?.data ?? data;
+  },
+
+  getPayoutTransactions: async (params?: { barbershopId?: string }): Promise<unknown[]> => {
+    const { data } = await api.get("/admin/payouts/transactions", { params });
+    return data?.data ?? data ?? [];
+  },
+
+  // ── Devoluciones ─────────────────────────────────────────────────────────
+  getRefunds: async (params?: { status?: string; page?: number; limit?: number }): Promise<{ data: unknown[]; total: number }> => {
+    const { data } = await api.get("/admin/refunds", { params });
+    const inner = data?.data;
+    if (inner && Array.isArray(inner.data)) return inner;
+    if (Array.isArray(inner)) return { data: inner, total: data.total ?? inner.length };
+    return { data: Array.isArray(data) ? data : [], total: 0 };
+  },
+
+  approveRefund: async (id: string): Promise<void> => {
+    await api.patch(`/admin/refunds/${id}/approve`);
+  },
+
+  rejectRefund: async (id: string): Promise<void> => {
+    await api.patch(`/admin/refunds/${id}/reject`);
+  },
+
   getSettings: async (): Promise<Record<string, unknown>> => {
     const { data } = await api.get("/admin/settings");
     return data;
