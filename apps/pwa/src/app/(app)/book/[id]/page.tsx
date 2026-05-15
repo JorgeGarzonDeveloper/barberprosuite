@@ -10,11 +10,12 @@ import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import { PageSpinner } from "@/components/ui/Spinner";
 import { formatCOP, cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Check, Calendar, Clock, CreditCard, Scissors } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, Calendar, Clock, CreditCard, Scissors, LogIn } from "lucide-react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { addDays, format, isSunday, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { getInitials } from "@/lib/utils";
+import { useAuthStore } from "@/store/auth.store";
 
 const TIME_SLOTS = Array.from({ length: 21 }, (_, i) => {
   const hour = Math.floor((i * 30) / 60) + 8;
@@ -27,6 +28,32 @@ function BookContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const preselectedBarberId = searchParams.get("barberId");
+  const { isAuthenticated } = useAuthStore();
+
+  if (!isAuthenticated) {
+    return (
+      <div className="page-container flex flex-col items-center justify-center min-h-[70vh] gap-5">
+        <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+          <Calendar size={40} className="text-primary" />
+        </div>
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-white">Inicia sesión para reservar</h2>
+          <p className="text-text-secondary text-sm mt-2">
+            Necesitas una cuenta para separar una cita
+          </p>
+        </div>
+        <Button onClick={() => router.push("/auth/login")} className="gap-2">
+          <LogIn size={16} /> Iniciar sesión
+        </Button>
+        <button
+          onClick={() => router.push("/auth/register")}
+          className="text-text-secondary text-sm hover:text-white transition-colors"
+        >
+          ¿No tienes cuenta? <span className="text-primary font-medium">Regístrate</span>
+        </button>
+      </div>
+    );
+  }
 
   const [step, setStep] = useState(1);
   const [selectedBarber, setSelectedBarber] = useState<Barber | null>(null);
