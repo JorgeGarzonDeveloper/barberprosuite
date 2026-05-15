@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/auth.store";
 import { appointmentsApi } from "@/lib/api/appointments.api";
@@ -32,7 +32,10 @@ import {
   KeyRound,
   Bell,
   Clock,
+  Camera,
+  Loader2,
 } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +45,29 @@ export default function ProfilePage() {
   const setUser = useAuthStore((s) => s.setUser);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const refreshToken = useAuthStore((s) => s.refreshToken);
+
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("avatar", file);
+    setUploadingAvatar(true);
+    try {
+      const res = await api.post("/users/me/avatar", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const avatarUrl = res.data?.avatarUrl ?? res.data?.data?.avatarUrl;
+      if (avatarUrl) setUser({ ...user!, avatarUrl });
+    } catch {
+      // silently fail
+    } finally {
+      setUploadingAvatar(false);
+      e.target.value = "";
+    }
+  }
 
   // Edit profile
   const [editingProfile, setEditingProfile] = useState(false);
@@ -159,8 +185,22 @@ export default function ProfilePage() {
 
       {/* Avatar & user info */}
       <div className="flex flex-col items-center mb-6">
-        <div className="w-20 h-20 rounded-full bg-[rgba(201,162,39,0.2)] border-2 border-primary/30 flex items-center justify-center text-2xl font-bold text-primary mb-3">
-          {user ? getInitials(user.firstName, user.lastName) : "??"}
+        <div className="relative mb-3">
+          <div className="w-20 h-20 rounded-full bg-[rgba(201,162,39,0.2)] border-2 border-primary/30 overflow-hidden flex items-center justify-center text-2xl font-bold text-primary">
+            {user?.avatarUrl ? (
+              <Image src={user.avatarUrl} alt="Avatar" fill className="object-cover" />
+            ) : (
+              user ? getInitials(user.firstName, user.lastName) : "??"
+            )}
+          </div>
+          <button
+            onClick={() => avatarInputRef.current?.click()}
+            disabled={uploadingAvatar}
+            className="absolute -bottom-1 -right-1 w-7 h-7 bg-primary rounded-full flex items-center justify-center shadow-lg disabled:opacity-60"
+          >
+            {uploadingAvatar ? <Loader2 size={13} className="text-black animate-spin" /> : <Camera size={13} className="text-black" />}
+          </button>
+          <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
         </div>
 
         {!editingProfile ? (
