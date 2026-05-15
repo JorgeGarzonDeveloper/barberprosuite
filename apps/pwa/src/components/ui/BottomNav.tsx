@@ -31,15 +31,17 @@ const clientItems: NavItem[] = [
 
 const barberItems: NavItem[] = [
   { href: "/home", icon: <Home size={22} />, label: "Inicio" },
-  { href: "/barber-queue", icon: <Users size={22} />, label: "Cola" },
+  { href: "/map", icon: <Map size={22} />, label: "Mapa" },
+  { href: "/barber-queue", icon: <Users size={22} />, label: "Mi Cola" },
   { href: "/appointments", icon: <Calendar size={22} />, label: "Citas" },
   { href: "/profile", icon: <User size={22} />, label: "Perfil" },
 ];
 
 const adminItems: NavItem[] = [
   { href: "/home", icon: <Home size={22} />, label: "Inicio" },
-  { href: "/admin", icon: <LayoutDashboard size={22} />, label: "Admin" },
+  { href: "/barber-queue", icon: <Users size={22} />, label: "Mi Cola" },
   { href: "/appointments", icon: <Calendar size={22} />, label: "Citas" },
+  { href: "/admin", icon: <LayoutDashboard size={22} />, label: "Admin" },
   { href: "/profile", icon: <User size={22} />, label: "Perfil" },
 ];
 
