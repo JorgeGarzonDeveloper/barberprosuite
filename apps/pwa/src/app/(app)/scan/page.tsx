@@ -6,13 +6,22 @@ import { queueApi } from "@/lib/api/queue.api";
 import { Barber } from "@/types";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
+import QueueCard from "@/components/QueueCard";
 import { cn } from "@/lib/utils";
-import { QrCode, Keyboard, User, CheckCircle } from "lucide-react";
+import { QrCode, Keyboard, User, CheckCircle, LogIn } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Html5Qrcode } from "html5-qrcode";
+import { useAuthStore } from "@/store/auth.store";
+import { useQueueStore } from "@/store/queue.store";
 
 export default function ScanPage() {
   const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
+  const { currentEntry, fetchCurrentEntry } = useQueueStore();
+
+  useEffect(() => {
+    if (isAuthenticated) fetchCurrentEntry();
+  }, [isAuthenticated, fetchCurrentEntry]);
   const [mode, setMode] = useState<"camera" | "manual">("camera");
   const [qrSecret, setQrSecret] = useState("");
   const [barbershopId, setBarbershopId] = useState("");
@@ -115,6 +124,48 @@ export default function ScanPage() {
     if (!manualCode.trim()) return;
     handleQrResult(manualCode.trim());
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="page-container flex flex-col items-center justify-center min-h-[70vh] gap-5">
+        <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+          <QrCode size={40} className="text-primary" />
+        </div>
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-white">Inicia sesión para continuar</h2>
+          <p className="text-text-secondary text-sm mt-2">
+            Necesitas una cuenta para unirte a la cola virtual
+          </p>
+        </div>
+        <Button onClick={() => router.push("/auth/login")} className="gap-2">
+          <LogIn size={16} /> Iniciar sesión
+        </Button>
+        <button
+          onClick={() => router.push("/auth/register")}
+          className="text-text-secondary text-sm hover:text-white transition-colors"
+        >
+          ¿No tienes cuenta? <span className="text-primary font-medium">Regístrate</span>
+        </button>
+      </div>
+    );
+  }
+
+  if (currentEntry && !success) {
+    return (
+      <div className="page-container">
+        <h1 className="text-xl font-bold text-white mb-2">Ya estás en cola</h1>
+        <p className="text-text-secondary text-sm mb-5">
+          Ya tienes una posición activa en la fila
+        </p>
+        <QueueCard entry={currentEntry} />
+        <div className="mt-4 text-center">
+          <p className="text-text-tertiary text-xs">
+            Para unirte a otra cola, primero debes salir de la actual
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (success) {
     return (

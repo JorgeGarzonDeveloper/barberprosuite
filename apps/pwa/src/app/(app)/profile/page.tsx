@@ -84,8 +84,10 @@ export default function ProfilePage() {
 
   const { data: appointmentsData } = useQuery({
     queryKey: ["appointments-stats"],
-    queryFn: () => appointmentsApi.getMy({ page: 1, limit: 100 }),
+    queryFn: () => appointmentsApi.getMy({}),
   });
+  const completedAppointmentsCount = (appointmentsData?.data || []).filter((a) => a.status === "COMPLETED").length;
+  const upcomingAppointmentsCount = (appointmentsData?.data || []).filter((a) => ["PENDING", "CONFIRMED"].includes(a.status)).length;
 
   const { data: subscriptionData } = useQuery({
     queryKey: ["my-subscription"],
@@ -130,10 +132,9 @@ export default function ProfilePage() {
     changePasswordMutation.mutate({ currentPassword: pwForm.currentPassword, newPassword: pwForm.newPassword });
   }
 
-  const appointments = appointmentsData?.data || [];
   const totalAppointments = appointmentsData?.total || 0;
-  const completedAppointments = appointments.filter((a) => a.status === "COMPLETED").length;
-  const upcomingAppointments = appointments.filter((a) => ["PENDING", "CONFIRMED"].includes(a.status)).length;
+  const completedAppointments = completedAppointmentsCount;
+  const upcomingAppointments = upcomingAppointmentsCount;
 
   const subscription = subscriptionData;
   const hasActiveSubscription = subscription?.status === "ACTIVE";

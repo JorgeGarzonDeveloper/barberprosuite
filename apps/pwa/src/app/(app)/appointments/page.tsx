@@ -16,6 +16,7 @@ import {
   MapPin,
   CheckCircle,
   XCircle,
+  AlertCircle,
 } from "lucide-react";
 import { formatDate, formatCOP, getStatusLabel, cn } from "@/lib/utils";
 
@@ -101,6 +102,22 @@ function AppointmentCard({
         <p className="text-primary font-semibold text-sm">
           {formatCOP(appointment.totalPrice)}
         </p>
+      )}
+
+      {/* Refund info for cancelled appointments */}
+      {appointment.status === "CANCELLED" && isClient && appointment.totalPrice && (
+        <div className="flex items-start gap-2 bg-[rgba(255,165,0,0.08)] border border-orange-500/20 rounded-xl p-3">
+          <AlertCircle size={13} className="text-orange-400 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-orange-300 text-xs font-semibold">Devolución</p>
+            <p className="text-text-secondary text-xs mt-0.5">
+              Puedes solicitar la devolución de hasta el 80% del valor pagado si cancelaste con más de 24h de anticipación (50% si fue menos de 24h).
+            </p>
+            <a href="/refunds/new" className="text-primary text-xs font-semibold mt-1 inline-block hover:underline">
+              Solicitar devolución →
+            </a>
+          </div>
+        </div>
       )}
 
       {(canCancel || canConfirm || canComplete) && (
