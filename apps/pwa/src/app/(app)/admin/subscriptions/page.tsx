@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "@/lib/api/admin.api";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
+import Modal from "@/components/ui/Modal";
 import { PageSpinner } from "@/components/ui/Spinner";
 import { formatCOP, formatDate, cn } from "@/lib/utils";
-import { Crown, ChevronLeft, ChevronRight, Calendar, User, Store } from "lucide-react";
+import { Crown, ChevronLeft, ChevronRight, Calendar, User, Store, Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface AdminSubscription {
@@ -38,13 +39,36 @@ const STATUS_LABELS: Record<string, string> = {
 
 export default function AdminSubscriptionsPage() {
   const router = useRouter();
+  const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const LIMIT = 20;
+
+  const [editSub, setEditSub] = useState<AdminSubscription | null>(null);
+  const [editStatus, setEditStatus] = useState("");
+  const [editEndDate, setEditEndDate] = useState("");
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-subscriptions", page],
     queryFn: () => adminApi.getSubscriptions({ page, limit: LIMIT }),
   });
+
+  const updateMutation = useMutation({
+    mutationFn: () =>
+      adminApi.updateSubscription(editSub!.id, {
+        status: editStatus || undefined,
+        endDate: editEndDate || undefined,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-subscriptions"] });
+      setEditSub(null);
+    },
+  });
+
+  function openEdit(sub: AdminSubscription) {
+    setEditSub(sub);
+    setEditStatus(sub.status);
+    setEditEndDate(sub.endDate ? sub.endDate.substring(0, 10) : "");
+  }
 
   const subscriptions = (data?.data ?? []) as AdminSubscription[];
   const total = data?.total ?? 0;
@@ -118,6 +142,17 @@ export default function AdminSubscriptionsPage() {
                     <span>Vence: {formatDate(sub.endDate)}</span>
                   </div>
                 )}
+
+                {/* Edit action */}
+                <div className="pt-2 mt-1 border-t border-white/5">
+                  <button
+                    onClick={() => openEdit(sub)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-text-secondary hover:text-white text-xs font-medium transition-colors"
+                  >
+                    <Pencil size={12} />
+                    Editar suscripción
+                  </button>
+                </div>
               </Card>
             ))}
           </div>
@@ -149,6 +184,60 @@ export default function AdminSubscriptionsPage() {
           <p className="text-text-secondary">No hay suscripciones</p>
         </div>
       )}
+
+      {/* Edit Modal */}
+      <Modal
+        isOpen={!!editSub}
+        onClose={() => setEditSub(null)}
+        title="Editar suscripción"
+      >
+        {editSub && (
+          <div className="flex flex-col gap-4">
+            <div>
+              <p className="text-text-secondary text-sm mb-3">
+                {editSub.barbershop?.name ?? "Barbería"} ·{" "}
+                <span className="text-text-tertiary">{editSub.user?.firstName} {editSub.user?.lastName}</span>
+              </p>
+
+              <label className="text-text-tertiary text-xs font-semibold mb-1.5 block">Estado</label>
+              <div className="grid grid-cols-2 gap-2">
+                {["ACTIVE", "EXPIRED", "TRIAL", "CANCELLED", "PENDING_PAYMENT"].map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setEditStatus(s)}
+                    className={cn(
+                      "py-2 px-3 rounded-xl border text-xs font-semibold transition-colors",
+                      editStatus === s
+                        ? "bg-primary/15 border-primary/40 text-primary"
+                        : "bg-white/5 border-white/10 text-text-secondary hover:text-white"
+                    )}
+                  >
+                    {STATUS_LABELS[s] ?? s}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-text-tertiary text-xs font-semibold mb-1.5 block">Fecha de vencimiento</label>
+              <input
+                type="date"
+                value={editEndDate}
+                onChange={(e) => setEditEndDate(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-primary"
+              />
+            </div>
+
+            <Button
+              fullWidth
+              loading={updateMutation.isPending}
+              onClick={() => updateMutation.mutate()}
+            >
+              Guardar cambios
+            </Button>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

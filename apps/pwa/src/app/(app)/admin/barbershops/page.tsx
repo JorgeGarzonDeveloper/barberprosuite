@@ -250,11 +250,21 @@ export default function AdminBarbershopsPage() {
   }
 
   // ── Image upload ────────────────────────────────────────────────────────────
+  const MAX_PHOTOS = 3;
+
   async function handleImageFiles(shopId: string, files: FileList | null) {
     if (!files || files.length === 0) return;
+    const shop = shops.find((s) => s.id === shopId);
+    const currentCount = shop?.images?.length ?? 0;
+    const remaining = MAX_PHOTOS - currentCount;
+    if (remaining <= 0) {
+      alert(`Máximo ${MAX_PHOTOS} fotos por barbería. Elimina alguna antes de subir.`);
+      return;
+    }
+    const toUpload = Array.from(files).slice(0, remaining);
     setUploadingImages(true);
     try {
-      await adminApi.uploadBarbershopImages(shopId, Array.from(files));
+      await adminApi.uploadBarbershopImages(shopId, toUpload);
       queryClient.invalidateQueries({ queryKey: ["admin-barbershops"] });
     } catch (e: any) {
       alert(e?.response?.data?.message ?? "Error al subir imágenes");
@@ -356,17 +366,32 @@ export default function AdminBarbershopsPage() {
                     <span>{b.phone}</span>
                   </div>
                 )}
-                <div className="flex items-center gap-1.5 text-xs mb-1">
+                <div className="flex items-center gap-1.5 text-xs mb-2">
                   <Star size={11} className="text-primary" />
                   <span className="text-primary font-semibold">{(b.rating ?? 0).toFixed(1)}</span>
                   <span className="text-text-tertiary">({b.totalReviews ?? 0} reseñas)</span>
-                  {b.images && b.images.length > 0 && (
-                    <span className="text-text-tertiary ml-2">· {b.images.length} foto(s)</span>
-                  )}
+                  <span className="text-text-tertiary ml-2">· {b.images?.length ?? 0}/{MAX_PHOTOS} fotos</span>
                 </div>
 
+                {/* Photo thumbnails */}
+                {b.images && b.images.length > 0 && (
+                  <div className="flex gap-2 mb-2 overflow-x-auto">
+                    {b.images.map((img, idx) => (
+                      <div key={idx} className="relative shrink-0 w-16 h-16 rounded-lg overflow-hidden group">
+                        <Image src={img} alt={`Foto ${idx + 1}`} fill className="object-cover" />
+                        <button
+                          onClick={() => deleteImageMutation.mutate({ id: b.id, url: img })}
+                          className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                        >
+                          <X size={14} className="text-white" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* Actions */}
-                <div className="flex gap-2 pt-2 border-t border-white/5 mt-2">
+                <div className="flex gap-2 pt-2 border-t border-white/5 mt-1">
                   <button
                     onClick={() => openEdit(b)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-text-secondary hover:text-white text-xs font-medium transition-colors"
@@ -379,15 +404,15 @@ export default function AdminBarbershopsPage() {
                       setImageShopId(b.id);
                       fileInputRef.current?.click();
                     }}
-                    disabled={uploadingImages && imageShopId === b.id}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-primary text-xs font-medium hover:bg-primary/15 transition-colors"
+                    disabled={(uploadingImages && imageShopId === b.id) || (b.images?.length ?? 0) >= MAX_PHOTOS}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-primary text-xs font-medium hover:bg-primary/15 transition-colors disabled:opacity-40"
                   >
                     {uploadingImages && imageShopId === b.id ? (
                       <Loader2 size={12} className="animate-spin" />
                     ) : (
                       <ImagePlus size={12} />
                     )}
-                    Fotos
+                    {(b.images?.length ?? 0) >= MAX_PHOTOS ? "Límite" : "Fotos"}
                   </button>
                   <button
                     onClick={() => openQr(b)}

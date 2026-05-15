@@ -37,13 +37,9 @@ function AppointmentCard({
   onAction: (id: string, action: "cancel" | "confirm" | "complete") => void;
 }) {
   const isClient = role === "CLIENT";
-  const canCancel =
-    isClient &&
-    ["PENDING", "CONFIRMED"].includes(appointment.status);
-  const canConfirm =
-    !isClient && appointment.status === "PENDING";
-  const canComplete =
-    !isClient && ["CONFIRMED", "IN_PROGRESS"].includes(appointment.status);
+  const canCancel = ["PENDING", "CONFIRMED"].includes(appointment.status);
+  const canConfirm = !isClient && appointment.status === "PENDING";
+  const canComplete = !isClient && ["CONFIRMED", "IN_PROGRESS"].includes(appointment.status);
 
   return (
     <Card className="flex flex-col gap-3">

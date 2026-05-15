@@ -137,6 +137,10 @@ export const adminApi = {
     return data.data ?? data;
   },
 
+  updateSubscription: async (id: string, payload: { status?: string; endDate?: string }): Promise<void> => {
+    await api.patch(`/admin/subscriptions/${id}`, payload);
+  },
+
   sendNotification: async (payload: {
     title: string;
     body: string;
