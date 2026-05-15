@@ -226,33 +226,74 @@ export default function AdminSettingsPage() {
 
       {/* NOTIFICACIONES */}
       {tab === "notifications" && (
-        <Card>
-          <div className="space-y-4 mb-6">
-            {NOTIF_ITEMS.map((item) => (
-              <div key={item.key} className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-white text-sm font-medium">{item.label}</p>
-                  <p className="text-text-tertiary text-xs mt-0.5">{item.desc}</p>
+        <div className="space-y-4">
+          {/* Test notification */}
+          <Card>
+            <h3 className="text-white text-sm font-bold mb-1">Prueba de notificaciones push</h3>
+            <p className="text-text-tertiary text-xs mb-3">
+              Envía una notificación de prueba a todos los admins para verificar que el sistema funciona correctamente.
+            </p>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() =>
+                api.post("/admin/notifications/send", {
+                  title: "🔔 Prueba del sistema",
+                  body: "Las notificaciones push están funcionando correctamente.",
+                  roles: ["ADMIN"],
+                }).then((r) => {
+                  const d = r.data?.data ?? r.data;
+                  if (d?.sent === false) {
+                    alert(`Error: ${d?.reason ?? "VAPID keys no configuradas"}`);
+                  } else {
+                    alert("✅ Notificación de prueba enviada");
+                  }
+                }).catch(() => alert("Error al enviar. Verifica la configuración del servidor."))
+              }
+            >
+              Enviar notificación de prueba
+            </Button>
+          </Card>
+
+          <Card>
+            <h3 className="text-white text-sm font-bold mb-1">Preferencias de alertas</h3>
+            <p className="text-text-tertiary text-xs mb-4">
+              Configura qué tipos de eventos del sistema te notifican
+            </p>
+            <div className="space-y-4 mb-5">
+              {NOTIF_ITEMS.map((item) => (
+                <div key={item.key} className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-white text-sm font-medium">{item.label}</p>
+                    <p className="text-text-tertiary text-xs mt-0.5">{item.desc}</p>
+                  </div>
+                  <button
+                    onClick={() => setNotifPrefs((p) => ({ ...p, [item.key]: !p[item.key as keyof typeof p] }))}
+                    className={cn(
+                      "relative w-11 h-6 rounded-full transition-all flex-shrink-0 mt-0.5",
+                      notifPrefs[item.key as keyof typeof notifPrefs] ? "bg-primary" : "bg-[rgba(255,255,255,0.15)]"
+                    )}
+                  >
+                    <span className={cn(
+                      "absolute top-1 w-4 h-4 rounded-full bg-white transition-all",
+                      notifPrefs[item.key as keyof typeof notifPrefs] ? "left-6" : "left-1"
+                    )} />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setNotifPrefs((p) => ({ ...p, [item.key]: !p[item.key as keyof typeof p] }))}
-                  className={cn(
-                    "relative w-11 h-6 rounded-full transition-all flex-shrink-0 mt-0.5",
-                    notifPrefs[item.key as keyof typeof notifPrefs] ? "bg-primary" : "bg-[rgba(255,255,255,0.15)]"
-                  )}
-                >
-                  <span className={cn(
-                    "absolute top-1 w-4 h-4 rounded-full bg-white transition-all",
-                    notifPrefs[item.key as keyof typeof notifPrefs] ? "left-6" : "left-1"
-                  )} />
-                </button>
-              </div>
-            ))}
+              ))}
+            </div>
+            <Button fullWidth onClick={saveNotifPrefs}>
+              Guardar preferencias
+            </Button>
+          </Card>
+
+          <div className="bg-[rgba(201,162,39,0.06)] border border-primary/20 rounded-xl p-4">
+            <p className="text-primary text-xs font-semibold mb-1">Para enviar notificaciones masivas</p>
+            <p className="text-text-secondary text-xs">
+              Ve a <a href="/admin/notifications" className="text-primary underline">Admin → Notificaciones</a> para enviar mensajes a todos los usuarios.
+            </p>
           </div>
-          <Button fullWidth onClick={saveNotifPrefs}>
-            Guardar preferencias
-          </Button>
-        </Card>
+        </div>
       )}
     </div>
   );

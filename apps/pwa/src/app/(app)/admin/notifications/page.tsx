@@ -63,7 +63,12 @@ export default function AdminNotificationsPage() {
         body: form.body,
         type: form.type,
       }),
-    onSuccess: () => {
+    onSuccess: (res) => {
+      const result = res.data?.data ?? res.data;
+      if (result?.sent === false) {
+        setSendError(result?.reason ?? "VAPID keys no configuradas en el servidor. Configura VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY en las variables de entorno.");
+        return;
+      }
       setSent(true);
       setSendError("");
       setForm(EMPTY_FORM);
@@ -71,18 +76,7 @@ export default function AdminNotificationsPage() {
       setTimeout(() => setSent(false), 4000);
     },
     onError: (e: any) => {
-      // Fallback to /notifications/send-all
-      api.post("/notifications/send-all", { title: form.title, body: form.body, type: form.type })
-        .then(() => {
-          setSent(true);
-          setSendError("");
-          setForm(EMPTY_FORM);
-          qc.invalidateQueries({ queryKey: ["admin-notifications-history"] });
-          setTimeout(() => setSent(false), 4000);
-        })
-        .catch(() => {
-          setSendError(e?.response?.data?.message ?? "No se pudo enviar la notificación");
-        });
+      setSendError(e?.response?.data?.message ?? "No se pudo enviar la notificación. Verifica la configuración del servidor.");
     },
   });
 

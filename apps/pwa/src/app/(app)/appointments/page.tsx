@@ -113,7 +113,7 @@ function AppointmentCard({
             <p className="text-text-secondary text-xs mt-0.5">
               Puedes solicitar la devolución de hasta el 80% del valor pagado si cancelaste con más de 24h de anticipación (50% si fue menos de 24h).
             </p>
-            <a href="/refunds/new" className="text-primary text-xs font-semibold mt-1 inline-block hover:underline">
+            <a href="/support" className="text-primary text-xs font-semibold mt-1 inline-block hover:underline">
               Solicitar devolución →
             </a>
           </div>

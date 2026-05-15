@@ -193,11 +193,11 @@ export const adminApi = {
   },
 
   approveRefund: async (id: string): Promise<void> => {
-    await api.patch(`/admin/refunds/${id}/approve`);
+    await api.post(`/admin/refunds/${id}/process`, { action: "approve" });
   },
 
-  rejectRefund: async (id: string): Promise<void> => {
-    await api.patch(`/admin/refunds/${id}/reject`);
+  rejectRefund: async (id: string, adminNote?: string): Promise<void> => {
+    await api.post(`/admin/refunds/${id}/process`, { action: "reject", adminNote });
   },
 
   getSettings: async (): Promise<Record<string, unknown>> => {
